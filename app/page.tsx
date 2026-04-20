@@ -5,8 +5,7 @@ import QuestCard from "@/components/home/QuestCard";
 import StartButton from "@/components/home/StartButton";
 import TabBar from "@/components/home/TabBar";
 import VillageSilhouette from "@/components/home/VillageSilhouette";
-import Smith from "@/components/home/Smith";
-import Witch from "@/components/home/Witch";
+import NpcParade from "@/components/home/NpcParade";
 
 export default function Home() {
   return (
@@ -46,8 +45,7 @@ export default function Home() {
           <StartButton />
         </main>
 
-        <Smith />
-        <Witch />
+        <NpcParade />
         <FloatingButtons />
         <TabBar />
       </div>

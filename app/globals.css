@@ -106,6 +106,30 @@ html, body {
   50%      { transform: translateY(-10px); }
 }
 
+/* NPC parade */
+@keyframes parade {
+  from { transform: translateX(-150px); }
+  to   { transform: translateX(calc(100vw + 150px)); }
+}
+@keyframes walk-cycle {
+  from { background-position: 0 0; }
+  to   { background-position: -512px 0; }
+}
+.parade-npc {
+  position: absolute;
+  bottom: 0;
+  width: 128px;
+  height: 128px;
+  background-repeat: no-repeat;
+  background-size: 512px 128px;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0 6px rgba(255, 179, 71, 0.3));
+  animation:
+    parade 12s linear infinite,
+    walk-cycle 0.6s steps(4) infinite;
+  will-change: transform, background-position;
+}
+
 /* Tab active dot */
 .tab-dot {
   width: 4px;
