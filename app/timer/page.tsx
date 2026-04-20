@@ -233,13 +233,17 @@ function TimerView() {
     return () => clearInterval(id);
   }, []);
 
-  // Circle geometry
-  const R = 136;
+  // Circle geometry (320px outer, 8px stroke → r=156)
+  const R = 156;
   const C = 2 * Math.PI * R;
   const progress = isCompleted
     ? 1
     : Math.max(0, Math.min(1, timeLeft / duration));
   const dashOffset = C * (1 - progress);
+  const percentCompleted = Math.min(
+    100,
+    Math.max(0, Math.round(((duration - timeLeft) / duration) * 100)),
+  );
 
   // Confetti only on completion
   const confetti = useMemo(
@@ -287,50 +291,70 @@ function TimerView() {
 
       {/* Top bar */}
       <div
-        className="relative z-10 grid items-center px-3"
-        style={{ height: 60, gridTemplateColumns: "110px 1fr 110px" }}
+        className="relative z-10 flex items-center justify-between"
+        style={{ height: 56, padding: "0 16px" }}
       >
-        <button
-          type="button"
-          onClick={() => setShowConfirm(true)}
-          className="flex items-center gap-1.5 px-2 py-1 font-cinzel justify-self-start"
-          style={{ fontSize: 12, letterSpacing: "2px", color: "#C4A882", cursor: "pointer" }}
+        <div className="flex items-center justify-start" style={{ width: "25%" }}>
+          <button
+            type="button"
+            onClick={() => setShowConfirm(true)}
+            className="flex items-center gap-1.5 font-cinzel"
+            style={{
+              fontSize: 11,
+              letterSpacing: "2px",
+              color: "#C4A882",
+              cursor: "pointer",
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path
+                d="M15 18l-6-6 6-6"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            STOP
+          </button>
+        </div>
+        <div
+          className="flex items-center justify-center"
+          style={{ width: "50%", minWidth: 0 }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path
-              d="M15 18l-6-6 6-6"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          ANNULEREN
-        </button>
-        <span
-          className="font-cinzel text-center truncate"
-          style={{ fontSize: 16, fontWeight: 700, color: "#FFD700" }}
-        >
-          {name}
-        </span>
-        <span />
+          <span
+            className="font-cinzel"
+            style={{
+              fontSize: 15,
+              fontWeight: 700,
+              color: "#FFD700",
+              maxWidth: "100%",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {name}
+          </span>
+        </div>
+        <div style={{ width: "25%" }} />
       </div>
 
-      {/* Main — timer + status + quote */}
-      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 pb-4">
+      {/* Main — timer + status + quote, vertically centered between top/bottom bars */}
+      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-4">
         <div
           className="relative"
           style={{
-            width: 280,
-            height: 280,
+            width: 320,
+            height: 320,
             filter:
-              "drop-shadow(0 0 12px rgba(255,179,71,0.8)) drop-shadow(0 0 6px rgba(255,179,71,0.4))",
+              "drop-shadow(0 0 20px rgba(255,179,71,0.9)) drop-shadow(0 0 10px rgba(255,179,71,0.5))",
           }}
         >
-          <svg width="280" height="280" viewBox="0 0 280 280">
+          <svg width="320" height="320" viewBox="0 0 320 320">
             <circle
-              cx="140"
-              cy="140"
+              cx="160"
+              cy="160"
               r={R}
               fill="none"
               stroke="#B8860B"
@@ -338,8 +362,8 @@ function TimerView() {
               strokeOpacity="0.35"
             />
             <circle
-              cx="140"
-              cy="140"
+              cx="160"
+              cy="160"
               r={R}
               fill="none"
               stroke="#FFB347"
@@ -347,7 +371,7 @@ function TimerView() {
               strokeLinecap="round"
               strokeDasharray={C}
               strokeDashoffset={dashOffset}
-              transform="rotate(-90 140 140)"
+              transform="rotate(-90 160 160)"
               style={{
                 transition:
                   "stroke-dashoffset 1s linear, stroke-width 0.4s ease",
@@ -367,9 +391,9 @@ function TimerView() {
             <span
               className="font-cinzel tabular-nums"
               style={{
-                fontSize: 64,
+                fontSize: 72,
                 fontWeight: 700,
-                letterSpacing: "4px",
+                letterSpacing: "6px",
                 color: "#FFE4B5",
                 lineHeight: 1,
                 textShadow: "0 0 20px rgba(255, 179, 71, 0.3)",
@@ -386,6 +410,16 @@ function TimerView() {
               }}
             >
               RESTEREND
+            </span>
+            <span
+              className="font-cinzel tabular-nums"
+              style={{
+                fontSize: 12,
+                color: "#C4A882",
+                marginTop: 2,
+              }}
+            >
+              {percentCompleted}% voltooid
             </span>
           </div>
         </div>
@@ -468,7 +502,7 @@ function TimerView() {
           </span>
           <span
             className="font-nunito"
-            style={{ fontSize: 11, color: "#C4A882" }}
+            style={{ fontSize: 12, color: "#FFB347" }}
           >
             Na voltooiing
           </span>
@@ -504,15 +538,15 @@ function TimerView() {
               <CoinsIcon size={24} />
             </span>
             <span
-              className="font-cinzel tabular-nums"
-              style={{ fontSize: 24, fontWeight: 700, color: "#FFD700" }}
+              className="font-cinzel tabular-nums coin-shimmer-bright"
+              style={{ fontSize: 24, fontWeight: 700 }}
             >
               {rewardCoins}
             </span>
           </span>
           <span
             className="font-nunito"
-            style={{ fontSize: 11, color: "#C4A882" }}
+            style={{ fontSize: 12, color: "#FFB347" }}
           >
             +bonus bij streak
           </span>

@@ -169,6 +169,13 @@ html, body {
   will-change: transform;
 }
 
+/* Timer bottom-bar coin shimmer */
+@keyframes coin-shimmer-bright {
+  0%, 100% { color: #FFD700; text-shadow: 0 0 0 transparent; }
+  50%      { color: #FFF5E4; text-shadow: 0 0 10px rgba(255, 215, 0, 0.8); }
+}
+.coin-shimmer-bright { animation: coin-shimmer-bright 3s ease-in-out infinite; }
+
 /* Paused label pulse */
 @keyframes paused-pulse {
   0%, 100% { opacity: 0.85; text-shadow: 0 0 6px rgba(231, 76, 60, 0.4); }
