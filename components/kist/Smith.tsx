@@ -75,8 +75,16 @@ export default function Smith({
   const scale = CHEST_SCALE[chestSize];
 
   return (
-    <div style={{ position: "relative", width: 128, height: 128 }}>
-      {/* Smith (anvil already stripped from source) */}
+    <div
+      style={{
+        position: "relative",
+        width: 128,
+        height: 128,
+        transform: "scale(2.5)",
+        transformOrigin: "center bottom",
+      }}
+    >
+      {/* Smith (anvil already stripped from source) — mirrored to face right */}
       <div
         aria-hidden
         className="pixel"
@@ -84,27 +92,28 @@ export default function Smith({
           position: "relative",
           width: 128,
           height: 128,
-          zIndex: 1,
+          zIndex: 3,
           backgroundImage: `url("${SMITH_SHEET}")`,
           backgroundSize: "500% 100%",
           backgroundPosition: `${smithBgX}% 0%`,
           backgroundRepeat: "no-repeat",
           imageRendering: "pixelated",
           filter: "drop-shadow(0 0 6px rgba(255, 179, 71, 0.3))",
+          transform: "scaleX(-1)",
         }}
       />
 
-      {/* Chest placed where the anvil used to be */}
+      {/* Chest placed where the mirrored hammer lands (to the right of smith center) */}
       {/* Outer div owns the size scale + transition; inner div owns the shake so they don't fight. */}
       <div
         ref={chestRef}
         style={{
           position: "absolute",
-          bottom: 10,
-          left: 6,
+          bottom: 8,
+          left: 65,
           width: 48,
           height: 32,
-          zIndex: 2,
+          zIndex: 1,
           transformOrigin: "center bottom",
           transform: `scale(${scale})`,
           transition:
