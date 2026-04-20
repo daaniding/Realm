@@ -4,6 +4,7 @@ import Header from "@/components/home/Header";
 import QuestCard from "@/components/home/QuestCard";
 import StartButton from "@/components/home/StartButton";
 import TabBar from "@/components/home/TabBar";
+import VillageSilhouette from "@/components/home/VillageSilhouette";
 
 export default function Home() {
   return (
@@ -18,6 +19,20 @@ export default function Home() {
         }}
       >
         <BackgroundParticles />
+        <VillageSilhouette />
+
+        {/* Ambient gold glow from the village */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0"
+          style={{
+            bottom: 60,
+            height: 260,
+            zIndex: 1,
+            background:
+              "radial-gradient(ellipse at 50% 100%, rgba(255, 179, 71, 0.08) 0%, rgba(255, 179, 71, 0) 65%)",
+          }}
+        />
 
         <Header />
 
