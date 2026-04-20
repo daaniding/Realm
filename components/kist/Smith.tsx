@@ -46,28 +46,25 @@ export default function Smith({
 }: Props) {
   const [smithFrame, setSmithFrame] = useState(0);
 
-  // Idle loop or attack burst
+  // Attack burst when isAttacking; otherwise hold static frame 0 (idle)
   useEffect(() => {
-    if (isAttacking) {
-      let i = 0;
+    if (!isAttacking) {
       setSmithFrame(0);
-      const id = window.setInterval(() => {
-        i++;
-        if (i === IMPACT_FRAME) onHammerImpact();
-        if (i >= SMITH_FRAMES) {
-          window.clearInterval(id);
-          setSmithFrame(0);
-          onAttackComplete();
-          return;
-        }
-        setSmithFrame(i);
-      }, ATTACK_MS);
-      return () => window.clearInterval(id);
+      return;
     }
+    let i = 0;
     setSmithFrame(0);
     const id = window.setInterval(() => {
-      setSmithFrame((f) => (f + 1) % SMITH_FRAMES);
-    }, IDLE_MS);
+      i++;
+      if (i === IMPACT_FRAME) onHammerImpact();
+      if (i >= SMITH_FRAMES) {
+        window.clearInterval(id);
+        setSmithFrame(0);
+        onAttackComplete();
+        return;
+      }
+      setSmithFrame(i);
+    }, ATTACK_MS);
     return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAttacking]);
@@ -103,8 +100,8 @@ export default function Smith({
         ref={chestRef}
         style={{
           position: "absolute",
-          bottom: 8,
-          left: 4,
+          bottom: 10,
+          left: 6,
           width: 48,
           height: 32,
           zIndex: 2,
