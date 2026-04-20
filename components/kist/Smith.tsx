@@ -103,8 +103,8 @@ export default function Smith({
         ref={chestRef}
         style={{
           position: "absolute",
-          bottom: 4,
-          left: 2,
+          bottom: 8,
+          left: 4,
           width: 48,
           height: 32,
           zIndex: 2,
