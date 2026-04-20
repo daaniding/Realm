@@ -53,8 +53,7 @@ export default function FloatingButtons() {
       className="fixed z-30 flex flex-col gap-3"
       style={{
         right: 12,
-        top: "50%",
-        transform: "translateY(-50%)",
+        top: 120,
       }}
     >
       <Fab icon="📦" label="Kisten" badge="3" />

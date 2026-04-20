@@ -8,27 +8,27 @@ export default function VillageSilhouette() {
         aria-hidden
         className="pointer-events-none absolute"
         style={{
-          top: 100,
-          right: 28,
-          width: 96,
-          height: 96,
+          top: 110,
+          right: 38,
+          width: 80,
+          height: 80,
           zIndex: 1,
           background:
-            "radial-gradient(circle, rgba(255,215,0,0.6) 0%, rgba(255,215,0,0.2) 35%, rgba(255,215,0,0) 70%)",
+            "radial-gradient(circle, rgba(255,215,0,0.3) 0%, rgba(255,215,0,0.12) 35%, rgba(255,215,0,0) 70%)",
         }}
       />
-      {/* Moon disc (40px) */}
+      {/* Moon disc (30px) */}
       <div
         aria-hidden
         className="pointer-events-none absolute rounded-full"
         style={{
-          top: 128,
-          right: 56,
-          width: 40,
-          height: 40,
+          top: 135,
+          right: 63,
+          width: 30,
+          height: 30,
           zIndex: 1,
           background: "rgba(255, 215, 0, 0.6)",
-          boxShadow: "0 0 18px rgba(255, 215, 0, 0.45)",
+          boxShadow: "0 0 14px rgba(255, 215, 0, 0.3)",
         }}
       />
 

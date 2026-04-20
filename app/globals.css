@@ -106,26 +106,26 @@ html, body {
   50%      { transform: translateY(-10px); }
 }
 
-/* NPC parade */
+/* NPC parade — right to left */
 @keyframes parade {
-  from { transform: translateX(-150px); }
-  to   { transform: translateX(calc(100vw + 150px)); }
+  from { transform: translateX(calc(100vw + 150px)); }
+  to   { transform: translateX(-150px); }
 }
 @keyframes walk-cycle {
   from { background-position: 0 0; }
-  to   { background-position: -512px 0; }
+  to   { background-position: -384px 0; }
 }
 .parade-npc {
   position: absolute;
   bottom: 0;
-  width: 128px;
-  height: 128px;
+  width: 96px;
+  height: 96px;
   background-repeat: no-repeat;
-  background-size: 512px 128px;
+  background-size: 384px 96px;
   image-rendering: pixelated;
   filter: drop-shadow(0 0 6px rgba(255, 179, 71, 0.3));
   animation:
-    parade 12s linear infinite,
+    parade 12s linear infinite both,
     walk-cycle 0.6s steps(4) infinite;
   will-change: transform, background-position;
 }
