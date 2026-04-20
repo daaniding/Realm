@@ -27,11 +27,11 @@ const IDLE_MS = 180;
 const ATTACK_MS = 80;
 const IMPACT_FRAME = 2;
 
-const CHEST_SCALE: Record<ChestSize, number> = {
-  small: 1.8,
-  medium: 2.4,
-  large: 3.0,
-  mega: 3.8,
+const CONTAINER_SCALE: Record<ChestSize, number> = {
+  small: 1.0,
+  medium: 1.5,
+  large: 2.0,
+  mega: 2.6,
 };
 
 export default function Smith({
@@ -72,7 +72,7 @@ export default function Smith({
   const smithBgX = (smithFrame * 100) / (SMITH_FRAMES - 1);
   const chestBgX = (chestFrame * 100) / 4;
   const chestBgY = (chestRow * 100) / 7;
-  const scale = CHEST_SCALE[chestSize];
+  const containerScale = CONTAINER_SCALE[chestSize];
 
   return (
     <div
@@ -80,8 +80,11 @@ export default function Smith({
         position: "relative",
         width: 128,
         height: 128,
-        transform: "scale(2.5)",
+        overflow: "visible",
+        transform: `scale(${containerScale})`,
         transformOrigin: "center bottom",
+        transition:
+          "transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1)",
       }}
     >
       {/* Smith (anvil already stripped from source) — mirrored to face right */}
@@ -103,10 +106,12 @@ export default function Smith({
         }}
       />
 
-      {/* Chest placed where the mirrored hammer lands (to the right of smith center) */}
-      {/* Outer div owns the size scale + transition; inner div owns the shake so they don't fight. */}
+      {/* Chest placed where the mirrored hammer lands. No own scale — the outer
+          container scales everything together. Shake applied via key-remount. */}
       <div
         ref={chestRef}
+        key={`tap-${chestShakeKey}`}
+        className="pixel"
         style={{
           position: "absolute",
           bottom: 8,
@@ -114,30 +119,19 @@ export default function Smith({
           width: 48,
           height: 32,
           zIndex: 1,
-          transformOrigin: "center bottom",
-          transform: `scale(${scale})`,
-          transition:
-            "transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+          background: "transparent",
+          border: "none",
+          backgroundImage: `url("${CHEST_SHEET}")`,
+          backgroundSize: "500% 800%",
+          backgroundPosition: `${chestBgX}% ${chestBgY}%`,
+          backgroundRepeat: "no-repeat",
+          imageRendering: "pixelated",
+          animation:
+            chestShakeKey > 0
+              ? "tap-shake 200ms ease-in-out"
+              : undefined,
         }}
-      >
-        <div
-          key={`tap-${chestShakeKey}`}
-          className="pixel"
-          style={{
-            width: "100%",
-            height: "100%",
-            backgroundImage: `url("${CHEST_SHEET}")`,
-            backgroundSize: "500% 800%",
-            backgroundPosition: `${chestBgX}% ${chestBgY}%`,
-            backgroundRepeat: "no-repeat",
-            imageRendering: "pixelated",
-            animation:
-              chestShakeKey > 0
-                ? "tap-shake 200ms ease-in-out"
-                : undefined,
-          }}
-        />
-      </div>
+      />
     </div>
   );
 }

@@ -481,7 +481,13 @@ function KistView() {
         }}
       >
         {/* Smith with chest-on-anvil + relative-positioned overlays */}
-        <div style={{ position: "relative", pointerEvents: "auto" }}>
+        <div
+          style={{
+            position: "relative",
+            pointerEvents: "auto",
+            overflow: "visible",
+          }}
+        >
           <Smith
             chestType={typeParam}
             chestSize={chestSize}
