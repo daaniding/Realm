@@ -2,25 +2,64 @@
 
 import { useEffect, useState } from "react";
 
+type ChestType = "bronze" | "silver" | "epic" | "legendary";
+type ChestSize = "small" | "medium" | "large" | "mega";
+
 type Props = {
   isAttacking: boolean;
   onAttackComplete: () => void;
   onHammerImpact?: () => void;
   scale?: number;
+
+  // Chest rendered on top of the anvil
+  chestSrc?: string;
+  chestType?: ChestType;
+  chestSize?: ChestSize;
+  chestRow?: number;
+  chestCol?: number;
+  chestShakeKey?: number;
+  chestBigShake?: boolean;
+  chestGlowRGB?: string; // e.g. "255, 215, 0"
+  chestProgress?: number;
+  chestRef?: (el: HTMLDivElement | null) => void;
 };
 
 const SHEET =
   "/assets/npcs/other/spritesheet%20format/smith_anvil-Sheet.png";
-const FRAMES = 5; // 160×32, 5 × 32×32
+const FRAMES = 5;
 const FRAME_W = 32;
 const FRAME_H = 32;
-const IMPACT_FRAME = 4; // hammer lands
+const IMPACT_FRAME = 4;
+
+const CHEST_ROW: Record<ChestType, number> = {
+  bronze: 0,
+  silver: 2,
+  epic: 4,
+  legendary: 6,
+};
+
+const CHEST_SCALE: Record<ChestSize, number> = {
+  small: 1.8,
+  medium: 2.4,
+  large: 3.2,
+  mega: 4.2,
+};
 
 export default function Smith({
   isAttacking,
   onAttackComplete,
   onHammerImpact,
   scale = 4,
+  chestSrc,
+  chestType,
+  chestSize = "small",
+  chestRow,
+  chestCol = 0,
+  chestShakeKey = 0,
+  chestBigShake = false,
+  chestGlowRGB = "255, 179, 71",
+  chestProgress = 0,
+  chestRef,
 }: Props) {
   const [frame, setFrame] = useState(0);
 
@@ -46,21 +85,92 @@ export default function Smith({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAttacking]);
 
-  const bgX = (frame * 100) / (FRAMES - 1); // 0/25/50/75/100
+  const smithBgX = (frame * 100) / (FRAMES - 1);
+  const smithW = FRAME_W * scale;
+  const smithH = FRAME_H * scale;
+
+  // Chest visuals
+  const showChest = chestSrc && chestType;
+  const row = chestRow ?? (chestType ? CHEST_ROW[chestType] : 0);
+  const chestScale = CHEST_SCALE[chestSize];
+  const baseGlow = 8 + 12 * chestProgress;
+  const maxGlow = 16 + 24 * chestProgress;
+  const glowDuration = Math.max(0.4, 2 - 1.2 * chestProgress);
+
   return (
     <div
-      aria-hidden
-      className="pixel"
       style={{
-        width: FRAME_W * scale,
-        height: FRAME_H * scale,
-        backgroundImage: `url("${SHEET}")`,
-        backgroundSize: `${FRAMES * 100}% 100%`,
-        backgroundPosition: `${bgX}% 0`,
-        backgroundRepeat: "no-repeat",
-        imageRendering: "pixelated",
-        filter: "drop-shadow(0 0 6px rgba(255, 179, 71, 0.3))",
+        position: "relative",
+        width: smithW,
+        height: smithH,
       }}
-    />
+    >
+      {/* Smith sprite */}
+      <div
+        aria-hidden
+        className="pixel"
+        style={{
+          position: "relative",
+          width: smithW,
+          height: smithH,
+          zIndex: 1,
+          backgroundImage: `url("${SHEET}")`,
+          backgroundSize: `${FRAMES * 100}% 100%`,
+          backgroundPosition: `${smithBgX}% 0`,
+          backgroundRepeat: "no-repeat",
+          imageRendering: "pixelated",
+          filter: "drop-shadow(0 0 6px rgba(255, 179, 71, 0.3))",
+        }}
+      />
+
+      {/* Chest sitting on the anvil */}
+      {showChest && (
+        <div
+          ref={chestRef}
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: "60%",
+            transform: `translateX(-50%) scale(${chestScale})`,
+            transformOrigin: "center bottom",
+            transition:
+              "transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+            zIndex: 2,
+          }}
+        >
+          <div
+            style={
+              {
+                width: 48,
+                height: 32,
+                animation: `chest-glow ${glowDuration}s ease-in-out infinite`,
+                ["--chest-base-glow" as string]: `${baseGlow}px`,
+                ["--chest-max-glow" as string]: `${maxGlow}px`,
+                ["--chest-glow-color" as string]: `rgba(${chestGlowRGB}, 0.8)`,
+              } as React.CSSProperties
+            }
+          >
+            <div
+              key={chestBigShake ? "big" : `tap-${chestShakeKey}`}
+              className="pixel"
+              style={{
+                width: "100%",
+                height: "100%",
+                backgroundImage: `url("${chestSrc}")`,
+                backgroundSize: "500% 800%",
+                backgroundPosition: `${chestCol * 25}% ${(row * 100) / 7}%`,
+                backgroundRepeat: "no-repeat",
+                imageRendering: "pixelated",
+                animation: chestBigShake
+                  ? "big-shake 400ms ease-in-out"
+                  : chestShakeKey > 0
+                    ? "tap-shake 200ms ease-in-out"
+                    : undefined,
+              }}
+            />
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

@@ -71,13 +71,6 @@ const CHESTS: Record<ChestType, ChestConfig> = {
   },
 };
 
-const SIZE_SCALE: Record<ChestSize, number> = {
-  small: 1.0,
-  medium: 1.5,
-  large: 2.0,
-  mega: 2.6,
-};
-
 const SIZE_GLOW_ALPHA: Record<ChestSize, number> = {
   small: 0.08,
   medium: 0.14,
@@ -358,13 +351,6 @@ function KistView() {
     return () => clearTimeout(id);
   }, [phase, finalItemList.length]);
 
-  // Chest glow CSS vars
-  const baseGlow = 8 + 12 * progress;
-  const maxGlow = 16 + 24 * progress;
-  const glowDuration = Math.max(0.4, 2 - 1.2 * progress);
-
-  const chestBgPos = `${col * 25}% ${(row * 100) / 7}%`;
-
   return (
     <div
       onClick={handleTap}
@@ -476,11 +462,11 @@ function KistView() {
         <div style={{ width: "25%" }} />
       </div>
 
-      {/* Central container: fixed 45% / 50%, flex-col gap 20 */}
+      {/* Central container: fixed center, flex-col */}
       <div
         style={{
           position: "fixed",
-          top: "45%",
+          top: "50%",
           left: "50%",
           transform: "translate(-50%, -50%)",
           display: "flex",
@@ -494,194 +480,82 @@ function KistView() {
           padding: "0 12px",
         }}
       >
-        {/* Smith + chest row */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "flex-end",
-            justifyContent: "center",
-            gap: 24,
-          }}
-        >
-          {(phase === "idle" || phase === "tapping") && (
-            <div style={{ alignSelf: "flex-end" }}>
-              <Smith
-                isAttacking={smithAttacking}
-                onAttackComplete={() => setSmithAttacking(false)}
-                onHammerImpact={() => setShakeKey((k) => k + 1)}
-                scale={4}
-              />
-            </div>
-          )}
-
-          {/* Chest scale wrapper */}
-          <div
-            ref={chestStageRef}
-            style={{
-              transform: `scale(${SIZE_SCALE[chestSize]})`,
-              transformOrigin: "center bottom",
-              transition:
-                "transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1)",
-              position: "relative",
-              pointerEvents: "auto",
+        {/* Smith with chest-on-anvil + relative-positioned overlays */}
+        <div style={{ position: "relative", pointerEvents: "auto" }}>
+          <Smith
+            isAttacking={smithAttacking}
+            onAttackComplete={() => setSmithAttacking(false)}
+            onHammerImpact={() => setShakeKey((k) => k + 1)}
+            scale={4}
+            chestSrc={sheet}
+            chestType={typeParam}
+            chestSize={chestSize}
+            chestRow={row}
+            chestCol={col}
+            chestShakeKey={shakeKey}
+            chestBigShake={bigShake}
+            chestGlowRGB={chest.rgb}
+            chestProgress={progress}
+            chestRef={(el) => {
+              chestStageRef.current = el;
             }}
-          >
-            {/* Ambient shake for large/mega */}
-            <div
+          />
+          <TapParticle color={chest.accent} burstKey={shakeKey} />
+          <ExplosionParticles
+            active={phase === "opening" || phase === "items"}
+            accentColor={chest.accent}
+          />
+
+          {popup && (
+            <span
+              key={popupKey}
+              className="font-cinzel"
               style={{
-                animation:
-                  chestSize === "mega"
-                    ? "mega-shake 0.15s linear infinite"
-                    : chestSize === "large"
-                      ? "gentle-shake 0.3s linear infinite"
-                      : undefined,
-                position: "relative",
+                position: "absolute",
+                top: -30,
+                left: "60%",
+                transform: "translateX(-50%)",
+                fontSize: popup.size,
+                fontWeight: 700,
+                color: popup.color,
+                textShadow: popup.glow
+                  ? "0 0 20px rgba(255, 215, 0, 0.8)"
+                  : "0 0 10px rgba(0, 0, 0, 0.5)",
+                whiteSpace: "nowrap",
+                animation: popup.mega
+                  ? "popup-mega 600ms ease-out forwards"
+                  : "popup-text 900ms ease-out forwards",
+                zIndex: 3,
               }}
             >
-              {/* Chest sprite (192×128, glow + shake) */}
-              <div
-                style={
-                  {
-                    width: 192,
-                    height: 128,
-                    animation: `chest-glow ${glowDuration}s ease-in-out infinite`,
-                    ["--chest-base-glow" as string]: `${baseGlow}px`,
-                    ["--chest-max-glow" as string]: `${maxGlow}px`,
-                    ["--chest-glow-color" as string]: `rgba(${chest.rgb}, 0.8)`,
-                  } as React.CSSProperties
-                }
-              >
-                <div
-                  key={bigShake ? "big" : `tap-${shakeKey}`}
-                  className="pixel"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    backgroundImage: `url("${sheet}")`,
-                    backgroundSize: "500% 800%",
-                    backgroundPosition: chestBgPos,
-                    backgroundRepeat: "no-repeat",
-                    imageRendering: "pixelated",
-                    animation: bigShake
-                      ? "big-shake 400ms ease-in-out"
-                      : shakeKey > 0
-                        ? "tap-shake 200ms ease-in-out"
-                        : undefined,
-                  }}
-                />
-              </div>
+              {popup.text}
+            </span>
+          )}
 
-              <TapParticle color={chest.accent} burstKey={shakeKey} />
-              <ExplosionParticles
-                active={phase === "opening" || phase === "items"}
-                accentColor={chest.accent}
-              />
-
-              {popup && (
-                <span
-                  key={popupKey}
-                  className="font-cinzel"
-                  style={{
-                    position: "absolute",
-                    top: -30,
-                    left: "50%",
-                    fontSize: popup.size,
-                    fontWeight: 700,
-                    color: popup.color,
-                    textShadow: popup.glow
-                      ? "0 0 20px rgba(255, 215, 0, 0.8)"
-                      : "0 0 10px rgba(0, 0, 0, 0.5)",
-                    whiteSpace: "nowrap",
-                    animation: popup.mega
-                      ? "popup-mega 600ms ease-out forwards"
-                      : "popup-text 900ms ease-out forwards",
-                    zIndex: 3,
-                  }}
-                >
-                  {popup.text}
-                </span>
-              )}
-
-              {ringKey > 0 && (
-                <span
-                  key={ringKey}
-                  aria-hidden
-                  className="pointer-events-none"
-                  style={{
-                    position: "absolute",
-                    left: "50%",
-                    top: "50%",
-                    width: 180,
-                    height: 180,
-                    border: `3px solid ${chest.accent}`,
-                    borderRadius: "50%",
-                    animation: "ring-expand 400ms ease-out forwards",
-                    zIndex: 1,
-                  }}
-                />
-              )}
-            </div>
-
-            {/* Steam wisps (outside shake wrapper for positioning) */}
-            {(chestSize === "medium" ||
-              chestSize === "large" ||
-              chestSize === "mega") &&
-              (phase === "idle" || phase === "tapping") &&
-              Array.from({
-                length:
-                  chestSize === "medium"
-                    ? 2
-                    : chestSize === "large"
-                      ? 4
-                      : 6,
-              }).map((_, i) => (
-                <span
-                  key={i}
-                  aria-hidden
-                  className="rounded-full pointer-events-none"
-                  style={{
-                    position: "absolute",
-                    width: 8,
-                    height: 8,
-                    left: `${20 + ((i * 17) % 60)}%`,
-                    top: `${20 + ((i * 13) % 60)}%`,
-                    background: chest.accent,
-                    filter: "blur(4px)",
-                    animation: `steam-pulse 2s ease-in-out ${i * 0.3}s infinite`,
-                    zIndex: 0,
-                  }}
-                />
-              ))}
-
-            {chestSize === "mega" &&
-              (phase === "idle" || phase === "tapping") &&
-              Array.from({ length: 8 }).map((_, i) => (
-                <span
-                  key={i}
-                  aria-hidden
-                  className="rounded-full pointer-events-none"
-                  style={{
-                    position: "absolute",
-                    left: "50%",
-                    top: "50%",
-                    width: 8,
-                    height: 8,
-                    marginLeft: -4,
-                    marginTop: -4,
-                    background: "#FFD700",
-                    boxShadow: "0 0 8px rgba(255, 215, 0, 0.9)",
-                    animation: `orbit 3s linear ${(i * 3) / 8}s infinite`,
-                    zIndex: 0,
-                  }}
-                />
-              ))}
-          </div>
+          {ringKey > 0 && (
+            <span
+              key={ringKey}
+              aria-hidden
+              className="pointer-events-none"
+              style={{
+                position: "absolute",
+                left: "60%",
+                top: "50%",
+                width: 180,
+                height: 180,
+                border: `3px solid ${chest.accent}`,
+                borderRadius: "50%",
+                transform: "translate(-50%, -50%)",
+                animation: "ring-expand 400ms ease-out forwards",
+                zIndex: 1,
+              }}
+            />
+          )}
         </div>
 
         {/* TAP prompt */}
         {(phase === "idle" || phase === "tapping") && showTapPrompt && (
-          <div style={{ textAlign: "center", marginTop: 20 }}>
+          <div style={{ textAlign: "center", marginTop: 8 }}>
             <div
               aria-hidden
               style={{
