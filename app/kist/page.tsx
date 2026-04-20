@@ -1,6 +1,6 @@
 "use client";
 
-import ChestItem, { type Rarity } from "@/components/kist/ChestItem";
+import ChestItem from "@/components/kist/ChestItem";
 import ChestSprite from "@/components/kist/ChestSprite";
 import ExplosionParticles from "@/components/kist/ExplosionParticles";
 import TapParticle from "@/components/kist/TapParticle";
@@ -9,11 +9,22 @@ import {
   CoinsIcon,
   SwordIcon,
 } from "@/components/ui/GameIcon";
+import {
+  ITEM_SETS,
+  type ChestSize,
+  type ChestType,
+  type IconId,
+} from "@/components/kist/itemSets";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
-type ChestType = "bronze" | "silver" | "epic" | "legendary";
-type ChestSize = "small" | "medium" | "large" | "mega";
 type Phase = "idle" | "tapping" | "opening" | "items" | "done";
 
 type ChestConfig = {
@@ -60,50 +71,14 @@ const CHESTS: Record<ChestType, ChestConfig> = {
   },
 };
 
-const SIZE_SPEC: Record<
-  ChestSize,
-  { scale: number; glowAlpha: number; idleMs: number }
-> = {
-  small:  { scale: 1.0, glowAlpha: 0.4,  idleMs: 200 },
-  medium: { scale: 1.4, glowAlpha: 0.55, idleMs: 150 },
-  large:  { scale: 1.8, glowAlpha: 0.7,  idleMs: 150 },
-  mega:   { scale: 2.4, glowAlpha: 0.9,  idleMs: 120 },
-};
+function rand(min: number, max: number) {
+  return Math.floor(min + Math.random() * (max - min + 1));
+}
 
-type Item = { name: string; icon: "sword" | "coin" | "castle"; rarity: Rarity };
-const ITEMS_BY_SIZE: Record<ChestSize, Item[]> = {
-  small: [
-    { name: "Boogschutter", icon: "sword", rarity: "common" },
-    { name: "50 Coins", icon: "coin", rarity: "common" },
-  ],
-  medium: [
-    { name: "Boogschutter", icon: "sword", rarity: "rare" },
-    { name: "150 Coins", icon: "coin", rarity: "common" },
-    { name: "Hout x5", icon: "castle", rarity: "rare" },
-  ],
-  large: [
-    { name: "Dark Knight", icon: "sword", rarity: "epic" },
-    { name: "300 Coins", icon: "coin", rarity: "rare" },
-    { name: "Hout x10", icon: "castle", rarity: "rare" },
-    { name: "Dorp Upgrade", icon: "castle", rarity: "epic" },
-  ],
-  mega: [
-    { name: "Samurai", icon: "sword", rarity: "legendary" },
-    { name: "500 Coins", icon: "coin", rarity: "epic" },
-    { name: "Hout x20", icon: "castle", rarity: "epic" },
-    { name: "Dorp Upgrade", icon: "castle", rarity: "epic" },
-    { name: "Geheim Held", icon: "sword", rarity: "legendary" },
-  ],
-};
-
-function renderIcon(id: Item["icon"]) {
+function renderIcon(id: IconId) {
   if (id === "sword") return <SwordIcon size={28} />;
   if (id === "coin") return <CoinsIcon size={28} />;
   return <CastleIcon size={28} />;
-}
-
-function rand(min: number, max: number) {
-  return Math.floor(min + Math.random() * (max - min + 1));
 }
 
 const PARTICLES = Array.from({ length: 8 }, (_, i) => ({
@@ -136,35 +111,69 @@ function KistView() {
   const [row, setRow] = useState(chest.closedRow);
   const [shakeKey, setShakeKey] = useState(0);
   const [bigShake, setBigShake] = useState(false);
-  const [flashLayers, setFlashLayers] = useState(0); // 0..3
+  const [flashLayers, setFlashLayers] = useState(0);
   const [flashKey, setFlashKey] = useState(0);
   const [screenShaking, setScreenShaking] = useState(false);
   const [showItems, setShowItems] = useState(false);
   const [showContinue, setShowContinue] = useState(false);
   const [showTapPrompt, setShowTapPrompt] = useState(false);
   const [ringKey, setRingKey] = useState(0);
-  const [popupText, setPopupText] = useState<string | null>(null);
+  const [popup, setPopup] = useState<{
+    text: string;
+    size: number;
+    color: string;
+    glow?: boolean;
+    mega?: boolean;
+  } | null>(null);
   const [popupKey, setPopupKey] = useState(0);
+  const [itemOffsets, setItemOffsets] = useState<
+    { dx: number; dy: number }[]
+  >([]);
 
-  // Random thresholds fixed for this session
+  // Random thresholds computed once
   const thresholdsRef = useRef<{
-    medium: number;
-    large: number;
-    mega: number;
+    medium: number | null;
+    large: number | null;
+    mega: number | null;
     open: number;
   } | null>(null);
   if (!thresholdsRef.current) {
+    const openAt = rand(6, 50);
     thresholdsRef.current = {
-      medium: rand(2, 4),
-      large: rand(5, 8),
-      mega: rand(9, 13),
-      open: rand(14, 18),
+      medium: openAt > 12 ? rand(8, 11) : null,
+      large: openAt > 22 ? rand(16, 21) : null,
+      mega: openAt > 35 ? rand(28, 34) : null,
+      open: openAt,
     };
   }
   const thresholds = thresholdsRef.current;
 
-  // Size snapshot at opening, for item array selection
+  // Dynamic scales per size based on viewport
+  const scaleRef = useRef<Record<ChestSize, number>>({
+    small: 1,
+    medium: 1.4,
+    large: 1.8,
+    mega: 2.4,
+  });
+  const [scaleReady, setScaleReady] = useState(false);
+  useEffect(() => {
+    const maxW = window.innerWidth * 0.72;
+    const maxH = window.innerHeight * 0.42;
+    const maxScaleX = maxW / 288;
+    const maxScaleY = maxH / 192;
+    const max = Math.min(maxScaleX, maxScaleY);
+    scaleRef.current = {
+      small: max * 0.32,
+      medium: max * 0.52,
+      large: max * 0.72,
+      mega: max * 1.0,
+    };
+    setScaleReady(true);
+  }, []);
+
   const finalSizeRef = useRef<ChestSize>("small");
+  const chestStageRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Tap prompt after 500ms
   useEffect(() => {
@@ -172,16 +181,22 @@ function KistView() {
     return () => clearTimeout(id);
   }, []);
 
-  // Idle frame loop — speed scales with size
+  // Idle frame loop
+  const SIZE_IDLE_MS: Record<ChestSize, number> = {
+    small: 200,
+    medium: 150,
+    large: 150,
+    mega: 120,
+  };
   useEffect(() => {
     if (phase !== "idle" && phase !== "tapping") return;
     const id = setInterval(() => {
       setCol((c) => (c + 1) % 5);
-    }, SIZE_SPEC[chestSize].idleMs);
+    }, SIZE_IDLE_MS[chestSize]);
     return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, chestSize]);
 
-  // Audio helper
   const playSound = (
     tones: { freq: number; start: number; gain: number; duration?: number }[],
   ) => {
@@ -210,18 +225,21 @@ function KistView() {
     }
   };
 
-  const triggerSizeUpgrade = (newSize: ChestSize) => {
+  const POPUP_SPEC: Record<
+    Exclude<ChestSize, "small">,
+    { text: string; size: number; color: string; mega?: boolean; glow?: boolean }
+  > = {
+    medium: { text: "GEMIDDELD", size: 22, color: "#FFB347" },
+    large: { text: "GROOT", size: 26, color: "#FFD700" },
+    mega: { text: "MEGA!", size: 32, color: "#FFD700", mega: true, glow: true },
+  };
+
+  const triggerSizeUpgrade = (newSize: Exclude<ChestSize, "small">) => {
     setChestSize(newSize);
     setRingKey((k) => k + 1);
-    const label =
-      newSize === "medium"
-        ? "+GROTER!"
-        : newSize === "large"
-          ? "++GROTER!!"
-          : "MEGA KIST!!!";
-    setPopupText(label);
+    setPopup(POPUP_SPEC[newSize]);
     setPopupKey((k) => k + 1);
-    window.setTimeout(() => setPopupText(null), 820);
+    window.setTimeout(() => setPopup(null), 850);
     playSound([
       { freq: 600, start: 0, gain: 0.3, duration: 0.15 },
       { freq: 800, start: 0.15, gain: 0.3, duration: 0.15 },
@@ -276,7 +294,7 @@ function KistView() {
     window.setTimeout(() => {
       setShowContinue(true);
       setPhase("done");
-    }, 2000);
+    }, 2000 + finalItemList.length * 200);
   };
 
   const handleTap = () => {
@@ -289,41 +307,64 @@ function KistView() {
     setTapCount(next);
     setShakeKey((k) => k + 1);
 
-    // tap sound
     const freq = Math.min(800, 300 + next * 40);
     playSound([{ freq, start: 0, gain: 0.15, duration: 0.1 }]);
 
-    // size upgrades: evaluate highest reached threshold
-    if (next >= thresholds.open) {
-      // snap to mega (or keep current if already mega) then open
-      if (chestSize !== "mega") {
-        triggerSizeUpgrade("mega");
-      }
-      window.setTimeout(startOpening, 260);
-      return;
-    }
-    if (next >= thresholds.mega && chestSize !== "mega") {
+    // Size upgrades (respect null thresholds)
+    if (
+      thresholds.mega !== null &&
+      next >= thresholds.mega &&
+      chestSize !== "mega"
+    ) {
       triggerSizeUpgrade("mega");
     } else if (
+      thresholds.large !== null &&
       next >= thresholds.large &&
       chestSize !== "large" &&
       chestSize !== "mega"
     ) {
       triggerSizeUpgrade("large");
     } else if (
+      thresholds.medium !== null &&
       next >= thresholds.medium &&
       chestSize === "small"
     ) {
       triggerSizeUpgrade("medium");
     }
+
+    if (next >= thresholds.open) {
+      window.setTimeout(startOpening, 260);
+    }
   };
 
   const progress = Math.min(1, tapCount / thresholds.open);
-  const sizeSpec = SIZE_SPEC[chestSize];
 
-  const itemList = phase === "items" || phase === "done"
-    ? ITEMS_BY_SIZE[finalSizeRef.current]
-    : [];
+  const finalItemList = useMemo(() => {
+    if (phase !== "items" && phase !== "done") return [];
+    return ITEM_SETS[typeParam]?.[finalSizeRef.current] ?? [];
+  }, [phase, typeParam]);
+
+  // Compute fly-out deltas when items render
+  useLayoutEffect(() => {
+    if (phase !== "items" && phase !== "done") return;
+    // Wait a frame so refs are populated
+    const id = window.setTimeout(() => {
+      if (!chestStageRef.current) return;
+      const chestRect = chestStageRef.current.getBoundingClientRect();
+      const chestCenterX = chestRect.left + chestRect.width / 2;
+      const chestCenterY = chestRect.top + chestRect.height / 2;
+      const offsets = itemRefs.current.map((el) => {
+        if (!el) return { dx: 0, dy: 0 };
+        const r = el.getBoundingClientRect();
+        return {
+          dx: chestCenterX - (r.left + r.width / 2),
+          dy: chestCenterY - (r.top + r.height / 2),
+        };
+      });
+      setItemOffsets(offsets);
+    }, 50);
+    return () => clearTimeout(id);
+  }, [phase, finalItemList.length]);
 
   return (
     <div
@@ -338,7 +379,7 @@ function KistView() {
           : undefined,
       }}
     >
-      {/* Radial glow, grows with size */}
+      {/* Radial glow */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
@@ -417,36 +458,39 @@ function KistView() {
 
       {/* Main */}
       <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 pb-6">
-        {/* Chest stage: size-scale wrapper > ambient-shake wrapper > sprite */}
         <div
+          ref={chestStageRef}
           className="relative flex items-center justify-center"
           style={{
-            width: 360,
-            height: 360,
+            width: "100%",
+            maxWidth: 360,
+            height: 300,
           }}
         >
-          {/* Popup text */}
-          {popupText && (
+          {popup && (
             <span
               key={popupKey}
               className="font-cinzel absolute"
               style={{
-                top: 30,
+                top: 10,
                 left: "50%",
-                fontSize: 20,
+                fontSize: popup.size,
                 fontWeight: 700,
-                color: "#FFD700",
-                textShadow: "0 0 12px rgba(255, 215, 0, 0.8)",
+                color: popup.color,
+                textShadow: popup.glow
+                  ? "0 0 20px rgba(255, 215, 0, 0.8)"
+                  : "0 0 10px rgba(0, 0, 0, 0.5)",
                 whiteSpace: "nowrap",
-                animation: "popup-text 800ms ease-out forwards",
+                animation: popup.mega
+                  ? "popup-mega 600ms ease-out forwards"
+                  : "popup-text 800ms ease-out forwards",
                 zIndex: 3,
               }}
             >
-              {popupText}
+              {popup.text}
             </span>
           )}
 
-          {/* Expanding ring on size upgrade */}
           {ringKey > 0 && (
             <span
               key={ringKey}
@@ -465,15 +509,14 @@ function KistView() {
             />
           )}
 
-          {/* Size scale wrapper (elastic) */}
           <div
             style={{
-              transform: `scale(${sizeSpec.scale})`,
+              transform: `scale(${scaleReady ? scaleRef.current[chestSize] : 0.5})`,
               transition:
                 "transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+              visibility: scaleReady ? "visible" : "hidden",
             }}
           >
-            {/* Ambient shake wrapper (large/mega constant) */}
             <div
               style={{
                 animation:
@@ -489,7 +532,7 @@ function KistView() {
                   src={sheet}
                   row={row}
                   col={col}
-                  glowColor={chest.glowRGBA(sizeSpec.glowAlpha)}
+                  glowColor={chest.glowRGBA(0.8)}
                   progress={progress}
                   shakeKey={shakeKey}
                   bigShake={bigShake}
@@ -508,63 +551,52 @@ function KistView() {
             </div>
           </div>
 
-          {/* Steam wisps */}
           {(chestSize === "medium" ||
             chestSize === "large" ||
             chestSize === "mega") &&
-            (phase === "idle" || phase === "tapping") && (
-              <>
-                {Array.from({
-                  length:
-                    chestSize === "medium"
-                      ? 2
-                      : chestSize === "large"
-                        ? 4
-                        : 6,
-                }).map((_, i) => (
-                  <span
-                    key={i}
-                    aria-hidden
-                    className="absolute rounded-full pointer-events-none"
-                    style={{
-                      width: 8,
-                      height: 8,
-                      left: `${20 + ((i * 17) % 60)}%`,
-                      top: `${20 + ((i * 13) % 60)}%`,
-                      background: chest.accent,
-                      filter: "blur(4px)",
-                      animation: `steam-pulse 2s ease-in-out ${i * 0.3}s infinite`,
-                      zIndex: 0,
-                    }}
-                  />
-                ))}
-              </>
-            )}
+            (phase === "idle" || phase === "tapping") &&
+            Array.from({
+              length:
+                chestSize === "medium" ? 2 : chestSize === "large" ? 4 : 6,
+            }).map((_, i) => (
+              <span
+                key={i}
+                aria-hidden
+                className="absolute rounded-full pointer-events-none"
+                style={{
+                  width: 8,
+                  height: 8,
+                  left: `${20 + ((i * 17) % 60)}%`,
+                  top: `${20 + ((i * 13) % 60)}%`,
+                  background: chest.accent,
+                  filter: "blur(4px)",
+                  animation: `steam-pulse 2s ease-in-out ${i * 0.3}s infinite`,
+                  zIndex: 0,
+                }}
+              />
+            ))}
 
-          {/* Orbit particles at mega */}
-          {chestSize === "mega" && (phase === "idle" || phase === "tapping") && (
-            <>
-              {Array.from({ length: 8 }).map((_, i) => (
-                <span
-                  key={i}
-                  aria-hidden
-                  className="absolute rounded-full pointer-events-none"
-                  style={{
-                    left: "50%",
-                    top: "50%",
-                    width: 8,
-                    height: 8,
-                    marginLeft: -4,
-                    marginTop: -4,
-                    background: "#FFD700",
-                    boxShadow: "0 0 8px rgba(255, 215, 0, 0.9)",
-                    animation: `orbit 3s linear ${(i * 3) / 8}s infinite`,
-                    zIndex: 0,
-                  }}
-                />
-              ))}
-            </>
-          )}
+          {chestSize === "mega" &&
+            (phase === "idle" || phase === "tapping") &&
+            Array.from({ length: 8 }).map((_, i) => (
+              <span
+                key={i}
+                aria-hidden
+                className="absolute rounded-full pointer-events-none"
+                style={{
+                  left: "50%",
+                  top: "50%",
+                  width: 8,
+                  height: 8,
+                  marginLeft: -4,
+                  marginTop: -4,
+                  background: "#FFD700",
+                  boxShadow: "0 0 8px rgba(255, 215, 0, 0.9)",
+                  animation: `orbit 3s linear ${(i * 3) / 8}s infinite`,
+                  zIndex: 0,
+                }}
+              />
+            ))}
         </div>
 
         {/* Idle prompt */}
@@ -619,20 +651,30 @@ function KistView() {
               className="flex w-full flex-wrap justify-center"
               style={{ gap: 8 }}
             >
-              {itemList.map((it, idx) => (
-                <ChestItem
-                  key={idx}
-                  icon={renderIcon(it.icon)}
-                  name={it.name}
-                  rarity={it.rarity}
-                  delayMs={idx * 200}
-                />
-              ))}
+              {finalItemList.map((it, idx) => {
+                const off = itemOffsets[idx];
+                return (
+                  <ChestItem
+                    key={idx}
+                    innerRef={(el) => {
+                      itemRefs.current[idx] = el;
+                    }}
+                    icon={renderIcon(it.icon)}
+                    name={it.name}
+                    rarity={it.rarity}
+                    rainbow={it.rainbow}
+                    delayMs={idx * 180}
+                    useFly={!!off}
+                    dx={off?.dx ?? 0}
+                    dy={off?.dy ?? 0}
+                    peak={finalSizeRef.current === "mega" ? 90 : 50}
+                  />
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Continue */}
         {showContinue && (
           <button
             type="button"
@@ -663,7 +705,6 @@ function KistView() {
         )}
       </main>
 
-      {/* Flash overlays (stacked for double/triple) */}
       {flashLayers > 0 &&
         Array.from({ length: flashLayers }).map((_, i) => (
           <div

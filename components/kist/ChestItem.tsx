@@ -23,24 +23,58 @@ type Props = {
   name: string;
   rarity: Rarity;
   delayMs: number;
+  rainbow?: boolean;
+  dx?: number;
+  dy?: number;
+  peak?: number;
+  useFly?: boolean;
+  innerRef?: (el: HTMLDivElement | null) => void;
 };
 
-export default function ChestItem({ icon, name, rarity, delayMs }: Props) {
+export default function ChestItem({
+  icon,
+  name,
+  rarity,
+  delayMs,
+  rainbow,
+  dx = 0,
+  dy = 0,
+  peak = 50,
+  useFly,
+  innerRef,
+}: Props) {
   const color = RARITY_COLORS[rarity];
+  const enterAnim = useFly
+    ? `fly-from-chest 550ms cubic-bezier(0.34, 1.56, 0.64, 1) ${delayMs}ms both`
+    : `slide-up 400ms ease-out ${delayMs}ms both`;
+  const legendaryAnim =
+    rarity === "legendary" && !rainbow
+      ? ", legendary-shimmer 1.8s ease-in-out infinite"
+      : "";
+  const rainbowAnim = rainbow ? ", rainbow-border 3s linear infinite" : "";
   return (
     <div
+      ref={innerRef}
       className="flex flex-col items-center justify-center"
-      style={{
-        width: "calc(33% - 6px)",
-        height: 100,
-        padding: "10px 8px",
-        gap: 6,
-        borderRadius: 12,
-        background: "var(--bg-light)",
-        border: `1.5px solid ${color}`,
-        boxShadow: RARITY_GLOWS[rarity],
-        animation: `slide-up 400ms ease-out ${delayMs}ms both${rarity === "legendary" ? ", legendary-shimmer 1.8s ease-in-out infinite" : ""}`,
-      }}
+      style={
+        {
+          width: "calc(33% - 6px)",
+          height: 100,
+          padding: "10px 8px",
+          gap: 6,
+          borderRadius: 12,
+          background: "var(--bg-light)",
+          border: `1.5px solid ${color}`,
+          boxShadow: RARITY_GLOWS[rarity],
+          filter: useFly
+            ? `drop-shadow(0 0 10px ${color})`
+            : undefined,
+          animation: `${enterAnim}${legendaryAnim}${rainbowAnim}`,
+          ["--dx" as string]: `${dx}px`,
+          ["--dy" as string]: `${dy}px`,
+          ["--peak" as string]: `${peak}px`,
+        } as React.CSSProperties
+      }
     >
       <span style={{ color, lineHeight: 0 }}>{icon}</span>
       <span
