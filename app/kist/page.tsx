@@ -31,7 +31,7 @@ type ChestConfig = {
   label: string;
   labelColor: string;
   accent: string;
-  glowRGBA: (a: number) => string;
+  rgb: string; // "R, G, B"
   closedRow: number;
   openRow: number;
 };
@@ -41,7 +41,7 @@ const CHESTS: Record<ChestType, ChestConfig> = {
     label: "BRONZEN KIST",
     labelColor: "#CD7F32",
     accent: "#CD7F32",
-    glowRGBA: (a) => `rgba(205, 127, 50, ${a})`,
+    rgb: "205, 127, 50",
     closedRow: 0,
     openRow: 1,
   },
@@ -49,7 +49,7 @@ const CHESTS: Record<ChestType, ChestConfig> = {
     label: "ZILVEREN KIST",
     labelColor: "#C0C0C0",
     accent: "#C0C0C0",
-    glowRGBA: (a) => `rgba(192, 192, 192, ${a})`,
+    rgb: "192, 192, 192",
     closedRow: 2,
     openRow: 3,
   },
@@ -57,7 +57,7 @@ const CHESTS: Record<ChestType, ChestConfig> = {
     label: "GOUDEN KIST",
     labelColor: "#FFD700",
     accent: "#FFD700",
-    glowRGBA: (a) => `rgba(255, 215, 0, ${a})`,
+    rgb: "255, 215, 0",
     closedRow: 4,
     openRow: 5,
   },
@@ -65,14 +65,26 @@ const CHESTS: Record<ChestType, ChestConfig> = {
     label: "LEGENDARISCHE KIST",
     labelColor: "#64C8FF",
     accent: "#64C8FF",
-    glowRGBA: (a) => `rgba(100, 200, 255, ${a})`,
+    rgb: "100, 200, 255",
     closedRow: 6,
     openRow: 7,
   },
 };
 
-function rand(min: number, max: number) {
-  return Math.floor(min + Math.random() * (max - min + 1));
+function bgOverlay(size: ChestSize, rgb: string): string {
+  switch (size) {
+    case "small":
+      return `radial-gradient(ellipse 50% 35% at 50% 55%, rgba(${rgb}, 0.08) 0%, transparent 70%)`;
+    case "medium":
+      return `radial-gradient(ellipse 65% 45% at 50% 55%, rgba(${rgb}, 0.14) 0%, transparent 70%)`;
+    case "large":
+      return `radial-gradient(ellipse 80% 60% at 50% 55%, rgba(${rgb}, 0.22) 0%, transparent 70%)`;
+    case "mega":
+      return [
+        `radial-gradient(ellipse 100% 80% at 50% 55%, rgba(${rgb}, 0.35) 0%, transparent 65%)`,
+        `radial-gradient(ellipse 60% 40% at 50% 60%, rgba(${rgb}, 0.20) 0%, transparent 60%)`,
+      ].join(", ");
+  }
 }
 
 function renderIcon(id: IconId) {
@@ -118,6 +130,7 @@ function KistView() {
   const [showContinue, setShowContinue] = useState(false);
   const [showTapPrompt, setShowTapPrompt] = useState(false);
   const [ringKey, setRingKey] = useState(0);
+  const [openingBurst, setOpeningBurst] = useState(false);
   const [popup, setPopup] = useState<{
     text: string;
     size: number;
@@ -130,7 +143,7 @@ function KistView() {
     { dx: number; dy: number }[]
   >([]);
 
-  // Random thresholds computed once
+  // Random thresholds — small ~50%, medium ~20%, large ~17%, mega ~13%
   const thresholdsRef = useRef<{
     medium: number | null;
     large: number | null;
@@ -138,17 +151,17 @@ function KistView() {
     open: number;
   } | null>(null);
   if (!thresholdsRef.current) {
-    const openAt = rand(6, 50);
+    const openAt = Math.floor(Math.random() * 27) + 4; // 4..30
     thresholdsRef.current = {
-      medium: openAt > 12 ? rand(8, 11) : null,
-      large: openAt > 22 ? rand(16, 21) : null,
-      mega: openAt > 35 ? rand(28, 34) : null,
+      medium: openAt > 18 ? Math.floor(Math.random() * 4) + 14 : null, // 14..17
+      large: openAt > 24 ? Math.floor(Math.random() * 4) + 20 : null, // 20..23
+      mega: openAt > 28 ? Math.floor(Math.random() * 3) + 25 : null, // 25..27
       open: openAt,
     };
   }
   const thresholds = thresholdsRef.current;
 
-  // Dynamic scales per size based on viewport
+  // Dynamic scales per viewport
   const scaleRef = useRef<Record<ChestSize, number>>({
     small: 1,
     medium: 1.4,
@@ -159,9 +172,7 @@ function KistView() {
   useEffect(() => {
     const maxW = window.innerWidth * 0.72;
     const maxH = window.innerHeight * 0.42;
-    const maxScaleX = maxW / 288;
-    const maxScaleY = maxH / 192;
-    const max = Math.min(maxScaleX, maxScaleY);
+    const max = Math.min(maxW / 288, maxH / 192);
     scaleRef.current = {
       small: max * 0.32,
       medium: max * 0.52,
@@ -175,13 +186,11 @@ function KistView() {
   const chestStageRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Tap prompt after 500ms
   useEffect(() => {
     const id = setTimeout(() => setShowTapPrompt(true), 500);
     return () => clearTimeout(id);
   }, []);
 
-  // Idle frame loop
   const SIZE_IDLE_MS: Record<ChestSize, number> = {
     small: 200,
     medium: 150,
@@ -221,7 +230,7 @@ function KistView() {
         osc.stop(s + d + 0.05);
       });
     } catch {
-      /* audio unavailable */
+      /* no audio */
     }
   };
 
@@ -239,7 +248,7 @@ function KistView() {
     setRingKey((k) => k + 1);
     setPopup(POPUP_SPEC[newSize]);
     setPopupKey((k) => k + 1);
-    window.setTimeout(() => setPopup(null), 850);
+    window.setTimeout(() => setPopup(null), 920);
     playSound([
       { freq: 600, start: 0, gain: 0.3, duration: 0.15 },
       { freq: 800, start: 0.15, gain: 0.3, duration: 0.15 },
@@ -264,6 +273,7 @@ function KistView() {
     setBigShake(true);
     setRow(chest.openRow);
     setCol(0);
+    setOpeningBurst(true);
 
     const flashCount =
       chestSize === "mega" ? 3 : chestSize === "large" ? 2 : 1;
@@ -287,6 +297,7 @@ function KistView() {
     }, 500);
     window.setTimeout(() => setBigShake(false), 600);
     window.setTimeout(() => setFlashLayers(0), 1000);
+    window.setTimeout(() => setOpeningBurst(false), 300);
     window.setTimeout(() => {
       setPhase("items");
       setShowItems(true);
@@ -294,7 +305,7 @@ function KistView() {
     window.setTimeout(() => {
       setShowContinue(true);
       setPhase("done");
-    }, 2000 + finalItemList.length * 200);
+    }, 2000 + (ITEM_SETS[typeParam]?.[chestSize]?.length ?? 3) * 200);
   };
 
   const handleTap = () => {
@@ -310,7 +321,6 @@ function KistView() {
     const freq = Math.min(800, 300 + next * 40);
     playSound([{ freq, start: 0, gain: 0.15, duration: 0.1 }]);
 
-    // Size upgrades (respect null thresholds)
     if (
       thresholds.mega !== null &&
       next >= thresholds.mega &&
@@ -344,21 +354,19 @@ function KistView() {
     return ITEM_SETS[typeParam]?.[finalSizeRef.current] ?? [];
   }, [phase, typeParam]);
 
-  // Compute fly-out deltas when items render
   useLayoutEffect(() => {
     if (phase !== "items" && phase !== "done") return;
-    // Wait a frame so refs are populated
     const id = window.setTimeout(() => {
       if (!chestStageRef.current) return;
       const chestRect = chestStageRef.current.getBoundingClientRect();
-      const chestCenterX = chestRect.left + chestRect.width / 2;
-      const chestCenterY = chestRect.top + chestRect.height / 2;
+      const cx = chestRect.left + chestRect.width / 2;
+      const cy = chestRect.top + chestRect.height / 2;
       const offsets = itemRefs.current.map((el) => {
         if (!el) return { dx: 0, dy: 0 };
         const r = el.getBoundingClientRect();
         return {
-          dx: chestCenterX - (r.left + r.width / 2),
-          dy: chestCenterY - (r.top + r.height / 2),
+          dx: cx - (r.left + r.width / 2),
+          dy: cy - (r.top + r.height / 2),
         };
       });
       setItemOffsets(offsets);
@@ -366,28 +374,53 @@ function KistView() {
     return () => clearTimeout(id);
   }, [phase, finalItemList.length]);
 
+  // Background overlay style (size + burst)
+  const overlayBg = openingBurst
+    ? `radial-gradient(ellipse 150% 120% at 50% 55%, rgba(${chest.rgb}, 0.65) 0%, transparent 55%)`
+    : bgOverlay(chestSize, chest.rgb);
+  const overlayTransition = openingBurst
+    ? "background 300ms ease"
+    : "background 1000ms ease";
+  const showMegaWarmTint =
+    (phase === "opening" || phase === "items" || phase === "done") &&
+    finalSizeRef.current === "mega";
+
   return (
     <div
+      onClick={handleTap}
       className="relative flex min-h-[100svh] w-full flex-col overflow-hidden"
       style={{
         maxWidth: 430,
         marginInline: "auto",
-        background:
-          "radial-gradient(ellipse at 50% 0%, #2d1a00 0%, var(--bg-mid) 35%, var(--bg-dark) 100%)",
+        background: "linear-gradient(180deg, #0d0600 0%, #1a0f00 100%)",
         animation: screenShaking
           ? "screen-shake 0.15s linear infinite"
           : undefined,
+        cursor:
+          phase === "idle" || phase === "tapping" ? "pointer" : "default",
       }}
     >
-      {/* Radial glow */}
+      {/* Dynamic glow overlay tied to size */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
-          background: `radial-gradient(circle at 50% 50%, ${chest.glowRGBA(0.08 + 0.28 * progress)} 0%, rgba(0,0,0,0) ${60 + 20 * progress}%)`,
-          transition: "background 400ms ease",
+          background: overlayBg,
+          transition: overlayTransition,
+          zIndex: 0,
         }}
       />
+      {/* Mega warm tint overlay during opening & after */}
+      {showMegaWarmTint && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: `rgba(${chest.rgb}, 0.05)`,
+            zIndex: 0,
+          }}
+        />
+      )}
 
       {/* Ambient particles */}
       <div
@@ -407,7 +440,7 @@ function KistView() {
               animationDelay: `${p.delay}s`,
               ["--drift" as string]: `${p.drift}px`,
               opacity: p.opacity,
-              boxShadow: `0 0 6px ${chest.glowRGBA(0.6)}`,
+              boxShadow: `0 0 6px rgba(${chest.rgb}, 0.6)`,
             }}
           />
         ))}
@@ -421,7 +454,10 @@ function KistView() {
         <div className="flex items-center" style={{ width: "25%" }}>
           <button
             type="button"
-            onClick={() => router.push("/")}
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push("/");
+            }}
             className="font-cinzel"
             style={{
               fontSize: 11,
@@ -461,11 +497,7 @@ function KistView() {
         <div
           ref={chestStageRef}
           className="relative flex items-center justify-center"
-          style={{
-            width: "100%",
-            maxWidth: 360,
-            height: 300,
-          }}
+          style={{ width: "100%", maxWidth: 360, height: 300 }}
         >
           {popup && (
             <span
@@ -483,7 +515,7 @@ function KistView() {
                 whiteSpace: "nowrap",
                 animation: popup.mega
                   ? "popup-mega 600ms ease-out forwards"
-                  : "popup-text 800ms ease-out forwards",
+                  : "popup-text 900ms ease-out forwards",
                 zIndex: 3,
               }}
             >
@@ -515,6 +547,7 @@ function KistView() {
               transition:
                 "transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1)",
               visibility: scaleReady ? "visible" : "hidden",
+              pointerEvents: "none",
             }}
           >
             <div
@@ -532,15 +565,10 @@ function KistView() {
                   src={sheet}
                   row={row}
                   col={col}
-                  glowColor={chest.glowRGBA(0.8)}
+                  glowColor={`rgba(${chest.rgb}, 0.8)`}
                   progress={progress}
                   shakeKey={shakeKey}
                   bigShake={bigShake}
-                  onClick={
-                    phase === "idle" || phase === "tapping"
-                      ? handleTap
-                      : undefined
-                  }
                 />
                 <TapParticle color={chest.accent} burstKey={shakeKey} />
                 <ExplosionParticles
@@ -599,7 +627,6 @@ function KistView() {
             ))}
         </div>
 
-        {/* Idle prompt */}
         {phase === "idle" && showTapPrompt && (
           <div className="flex flex-col items-center" style={{ marginTop: 24 }}>
             <span
@@ -623,12 +650,11 @@ function KistView() {
                 marginTop: 6,
               }}
             >
-              TAP DE KIST
+              TAP DE KIST OPEN
             </span>
           </div>
         )}
 
-        {/* Items */}
         {showItems && (
           <div
             className="flex flex-col items-center"
@@ -667,7 +693,7 @@ function KistView() {
                     useFly={!!off}
                     dx={off?.dx ?? 0}
                     dy={off?.dy ?? 0}
-                    peak={finalSizeRef.current === "mega" ? 90 : 50}
+                    peak={finalSizeRef.current === "mega" ? 90 : 55}
                   />
                 );
               })}
@@ -678,7 +704,10 @@ function KistView() {
         {showContinue && (
           <button
             type="button"
-            onClick={() => router.push("/")}
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push("/");
+            }}
             className="font-cinzel select-none"
             style={{
               marginTop: 28,
