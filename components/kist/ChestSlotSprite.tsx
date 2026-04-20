@@ -13,17 +13,11 @@ const ROW: Record<ChestType, number> = {
 
 type Props = {
   type: ChestType;
-  scale?: number;
   animated?: boolean;
   isReady?: boolean;
 };
 
-export default function ChestSlotSprite({
-  type,
-  scale = 3,
-  animated,
-  isReady,
-}: Props) {
+export default function ChestSlotSprite({ type, animated, isReady }: Props) {
   const [col, setCol] = useState(0);
   useEffect(() => {
     if (!animated) return;
@@ -33,23 +27,25 @@ export default function ChestSlotSprite({
 
   const bgX = col * 25;
   const bgY = (ROW[type] * 100) / 7;
-  const w = 48 * scale;
-  const h = 32 * scale;
 
   return (
     <div
       aria-hidden
       className="pixel"
       style={{
-        width: w,
-        height: h,
+        display: "block",
+        margin: "0 auto",
+        width: 120,
+        height: 80,
         backgroundImage:
           'url("/assets/chests/Animated%20Chests/Chests.png")',
         backgroundSize: "500% 800%",
         backgroundPosition: `${bgX}% ${bgY}%`,
         backgroundRepeat: "no-repeat",
         imageRendering: "pixelated",
-        animation: isReady ? "ready-glow 1.5s ease-in-out infinite" : undefined,
+        animation: isReady
+          ? "ready-glow 1.5s ease-in-out infinite"
+          : undefined,
       }}
     />
   );
