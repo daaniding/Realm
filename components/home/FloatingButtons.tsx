@@ -1,5 +1,7 @@
+import { ChestIcon, CrossedSwordsIcon, ShopIcon } from "@/components/ui/GameIcon";
+
 type FabProps = {
-  icon: string;
+  icon: React.ReactNode;
   badge?: string;
   label: string;
 };
@@ -18,14 +20,14 @@ function Fab({ icon, badge, label }: FabProps) {
         border: "1.5px solid var(--gold-dark)",
         boxShadow:
           "0 4px 0 rgba(0, 0, 0, 0.5), 0 0 10px rgba(255, 179, 71, 0.1), inset 0 1px 0 rgba(255, 179, 71, 0.15)",
-        fontSize: 24,
+        color: "#FFB347",
         cursor: "pointer",
       }}
     >
-      <span>{icon}</span>
+      {icon}
       {badge && (
         <span
-          className="absolute flex items-center justify-center font-nunito font-bold"
+          className="absolute flex items-center justify-center font-nunito"
           style={{
             top: -4,
             right: -4,
@@ -36,6 +38,7 @@ function Fab({ icon, badge, label }: FabProps) {
             background: "var(--red-bright)",
             color: "#fff",
             fontSize: 11,
+            fontWeight: 700,
             border: "2px solid var(--bg-dark)",
             boxShadow: "0 0 6px rgba(231, 76, 60, 0.6)",
           }}
@@ -51,14 +54,11 @@ export default function FloatingButtons() {
   return (
     <div
       className="fixed z-30 flex flex-col gap-3"
-      style={{
-        right: 12,
-        top: 120,
-      }}
+      style={{ right: 12, top: 120 }}
     >
-      <Fab icon="📦" label="Kisten" badge="3" />
-      <Fab icon="⚔️" label="Aanvallen" />
-      <Fab icon="🏪" label="Shop" />
+      <Fab icon={<ChestIcon size={26} />} label="Kisten" badge="3" />
+      <Fab icon={<CrossedSwordsIcon size={26} />} label="Aanvallen" />
+      <Fab icon={<ShopIcon size={26} />} label="Shop" />
     </div>
   );
 }

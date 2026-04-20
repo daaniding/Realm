@@ -11,10 +11,10 @@ export default function StartButton() {
         border: "none",
         background:
           "linear-gradient(180deg, var(--amber) 0%, var(--red-action) 100%)",
-        color: "var(--text-primary)",
+        color: "#FFF5E4",
         fontSize: 22,
-        fontWeight: 700,
-        letterSpacing: "2px",
+        fontWeight: 900,
+        letterSpacing: "3px",
         textShadow: "0 1px 2px rgba(0,0,0,0.4)",
         cursor: "pointer",
       }}

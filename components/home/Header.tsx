@@ -1,3 +1,5 @@
+import { CoinsIcon, TrophyIcon } from "@/components/ui/GameIcon";
+
 export default function Header() {
   const xpPct = 46;
   return (
@@ -26,8 +28,8 @@ export default function Header() {
         />
         <div className="flex flex-col gap-1.5">
           <span
-            className="font-cinzel font-bold leading-none"
-            style={{ fontSize: 18, color: "var(--gold-bright)" }}
+            className="font-cinzel leading-none"
+            style={{ fontSize: 18, fontWeight: 700, letterSpacing: "2px", color: "#FFD700" }}
           >
             DAAN
           </span>
@@ -60,10 +62,10 @@ export default function Header() {
             border: "1px solid rgba(255, 179, 71, 0.2)",
           }}
         >
-          <span style={{ fontSize: 14 }}>🪙</span>
+          <CoinsIcon size={20} style={{ color: "#FFD700" }} />
           <span
-            className="font-cinzel font-bold tabular-nums coin-shimmer"
-            style={{ fontSize: 14 }}
+            className="font-cinzel tabular-nums coin-shimmer"
+            style={{ fontSize: 14, fontWeight: 700 }}
           >
             1.273
           </span>
@@ -75,10 +77,10 @@ export default function Header() {
             border: "1px solid rgba(255, 179, 71, 0.2)",
           }}
         >
-          <span style={{ fontSize: 14 }}>🏆</span>
+          <TrophyIcon size={20} style={{ color: "#FFD700" }} />
           <span
-            className="font-cinzel font-bold tabular-nums"
-            style={{ fontSize: 14, color: "var(--gold-bright)" }}
+            className="font-cinzel tabular-nums"
+            style={{ fontSize: 14, fontWeight: 700, color: "#FFD700" }}
           >
             0
           </span>

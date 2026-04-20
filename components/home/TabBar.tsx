@@ -1,10 +1,21 @@
-type Tab = { icon: string; label: string; active?: boolean };
+import {
+  CastleIcon,
+  HouseIcon,
+  LaurelsIcon,
+  SwordIcon,
+} from "@/components/ui/GameIcon";
+
+type Tab = {
+  icon: React.ReactNode;
+  label: string;
+  active?: boolean;
+};
 
 const TABS: Tab[] = [
-  { icon: "🏠", label: "HOME", active: true },
-  { icon: "🗺️", label: "DORP" },
-  { icon: "⚔️", label: "HELDEN" },
-  { icon: "🏆", label: "LEAGUE" },
+  { icon: <HouseIcon size={24} />, label: "HOME", active: true },
+  { icon: <CastleIcon size={24} />, label: "DORP" },
+  { icon: <SwordIcon size={24} />, label: "HELDEN" },
+  { icon: <LaurelsIcon size={24} />, label: "LEAGUE" },
 ];
 
 export default function TabBar() {
@@ -27,16 +38,16 @@ export default function TabBar() {
           type="button"
           className="flex flex-1 flex-col items-center justify-center gap-1"
           style={{
-            color: t.active ? "var(--gold-primary)" : "var(--text-secondary)",
+            color: t.active ? "#FFD700" : "#C4A882",
             transition: "color 200ms ease, opacity 200ms ease",
             opacity: t.active ? 1 : 0.85,
             cursor: "pointer",
           }}
         >
-          <span style={{ fontSize: 24, lineHeight: 1 }}>{t.icon}</span>
+          {t.icon}
           <span
-            className="font-nunito font-bold"
-            style={{ fontSize: 10, letterSpacing: "1px" }}
+            className="font-cinzel"
+            style={{ fontSize: 10, fontWeight: 600, letterSpacing: "1.5px" }}
           >
             {t.label}
           </span>

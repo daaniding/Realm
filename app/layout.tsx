@@ -5,13 +5,15 @@ import "./globals.css";
 const cinzel = Cinzel({
   subsets: ["latin"],
   variable: "--font-cinzel",
-  weight: ["400", "600", "700"],
+  weight: ["400", "600", "700", "900"],
+  display: "swap",
 });
 
 const nunito = Nunito({
   subsets: ["latin"],
   variable: "--font-nunito",
   weight: ["400", "600", "700", "800"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {

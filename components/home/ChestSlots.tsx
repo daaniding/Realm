@@ -1,3 +1,5 @@
+import { ChestIcon, PadlockIcon } from "@/components/ui/GameIcon";
+
 type SlotProps = { children: React.ReactNode; ready?: boolean; glow?: string };
 
 function Slot({ children, ready, glow }: SlotProps) {
@@ -34,8 +36,9 @@ export default function ChestSlots() {
         className="font-cinzel"
         style={{
           fontSize: 10,
-          letterSpacing: "2px",
-          color: "var(--text-secondary)",
+          fontWeight: 400,
+          letterSpacing: "3px",
+          color: "#C4A882",
           paddingLeft: 2,
         }}
       >
@@ -44,10 +47,10 @@ export default function ChestSlots() {
       <div className="flex gap-2">
         {/* Slot 1: filled, timer running */}
         <Slot glow="0 0 8px rgba(255, 179, 71, 0.3)">
-          <span style={{ fontSize: 28, lineHeight: 1 }}>📦</span>
+          <ChestIcon size={28} style={{ color: "#FFD700" }} />
           <span
-            className="font-cinzel font-bold tabular-nums"
-            style={{ fontSize: 11, color: "var(--gold-primary)" }}
+            className="font-cinzel tabular-nums"
+            style={{ fontSize: 13, fontWeight: 700, color: "#FFB347" }}
           >
             41:13
           </span>
@@ -55,12 +58,17 @@ export default function ChestSlots() {
 
         {/* Slot 2: ready to open */}
         <Slot ready>
-          <span className="chest-shimmer" style={{ fontSize: 28, lineHeight: 1 }}>
-            📦
+          <span className="chest-shimmer" style={{ color: "#FFD700", lineHeight: 0 }}>
+            <ChestIcon size={28} />
           </span>
           <span
-            className="font-cinzel font-bold"
-            style={{ fontSize: 11, color: "#E74C3C" }}
+            className="font-cinzel"
+            style={{
+              fontSize: 12,
+              fontWeight: 900,
+              letterSpacing: "2px",
+              color: "#E74C3C",
+            }}
           >
             OPEN!
           </span>
@@ -68,12 +76,12 @@ export default function ChestSlots() {
 
         {/* Slot 3: empty */}
         <Slot>
-          <span style={{ fontSize: 20, opacity: 0.4 }}>🔒</span>
+          <PadlockIcon size={20} style={{ color: "#C4A882", opacity: 0.5 }} />
         </Slot>
 
         {/* Slot 4: empty */}
         <Slot>
-          <span style={{ fontSize: 20, opacity: 0.4 }}>🔒</span>
+          <PadlockIcon size={20} style={{ color: "#C4A882", opacity: 0.5 }} />
         </Slot>
       </div>
     </div>

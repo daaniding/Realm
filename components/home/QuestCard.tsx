@@ -1,3 +1,5 @@
+import { CoinsIcon, CrossedSwordsIcon } from "@/components/ui/GameIcon";
+
 export default function QuestCard() {
   return (
     <div className="flex w-full flex-col items-center">
@@ -5,8 +7,9 @@ export default function QuestCard() {
         className="font-cinzel mb-3"
         style={{
           fontSize: 11,
-          letterSpacing: "3px",
-          color: "var(--text-secondary)",
+          fontWeight: 400,
+          letterSpacing: "4px",
+          color: "#C4A882",
         }}
       >
         DAGELIJKSE OPDRACHT
@@ -35,23 +38,24 @@ export default function QuestCard() {
             border: "2px solid var(--gold-primary)",
             boxShadow:
               "0 0 12px rgba(255, 179, 71, 0.35), inset 0 0 8px rgba(0,0,0,0.6)",
-            fontSize: 28,
+            color: "#FFB347",
           }}
         >
-          ⚔️
+          <CrossedSwordsIcon size={28} />
         </div>
         <div className="flex flex-col gap-1 min-w-0">
           <h2
-            className="font-cinzel font-bold leading-tight"
-            style={{ fontSize: 20, color: "var(--text-primary)" }}
+            className="font-cinzel leading-tight"
+            style={{ fontSize: 20, fontWeight: 700, color: "#FFF5E4" }}
           >
             Focus &amp; Conquer
           </h2>
           <p
-            className="font-nunito leading-tight"
-            style={{ fontSize: 14, color: "var(--text-secondary)" }}
+            className="font-nunito leading-tight flex items-center gap-1.5"
+            style={{ fontSize: 14, fontWeight: 600, color: "#C4A882" }}
           >
-            30 minuten · 150 🪙
+            30 minuten · 150
+            <CoinsIcon size={16} style={{ color: "#FFD700" }} />
           </p>
         </div>
       </div>
