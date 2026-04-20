@@ -27,10 +27,10 @@ export default function Smith({
   const [smithFrame, setSmithFrame] = useState(0);
 
   const scaleMap = {
-    small: 1.0,
-    medium: 1.5,
-    large: 2.0,
-    mega: 2.6,
+    small: 1.5,
+    medium: 2.2,
+    large: 3.0,
+    mega: 3.8,
   } as const;
   const scale = scaleMap[chestSize];
 
@@ -66,22 +66,25 @@ export default function Smith({
   return (
     <div
       style={{
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "flex-end",
-        gap: "8px",
+        position: "relative",
+        width: 128,
+        height: 128,
+        overflow: "visible",
         transform: `scale(${scale})`,
         transformOrigin: "center bottom",
         transition: "transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1)",
       }}
     >
-      {/* Smid sprite (mirrored to face right) */}
+      {/* Smid sprite — mirrored to face right */}
       <div
         aria-hidden
         className="pixel"
         style={{
-          width: "128px",
-          height: "128px",
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: 128,
+          height: 128,
           backgroundImage:
             "url('/assets/npcs/other/spritesheet%20format/smith_no_anvil.png')",
           backgroundSize: "500% 100%",
@@ -89,25 +92,29 @@ export default function Smith({
           backgroundRepeat: "no-repeat",
           imageRendering: "pixelated",
           transform: "scaleX(-1)",
-          flexShrink: 0,
+          transformOrigin: "center center",
         }}
       />
 
-      {/* Kist sprite */}
+      {/* Kist placed exactly where the (mirrored) anvil is:
+          anvil src x=0..16, y=17..29 → render 0..64, 68..116 on 128×128.
+          Mirror flips left ↔ right, so we use right:0 instead of left:0. */}
       <div
         ref={chestRef}
         key={`tap-${chestShakeKey}`}
         className="pixel"
         style={{
-          width: "192px",
-          height: "128px",
+          position: "absolute",
+          top: 68,
+          right: 0,
+          width: 64,
+          height: 48,
           backgroundImage:
             "url('/assets/chests/Animated%20Chests/Chests.png')",
           backgroundSize: "500% 800%",
           backgroundPosition: `${chestBgX}% ${chestBgY}%`,
           backgroundRepeat: "no-repeat",
           imageRendering: "pixelated",
-          flexShrink: 0,
           animation:
             chestShakeKey > 0 ? "tap-shake 200ms ease-in-out" : undefined,
         }}
