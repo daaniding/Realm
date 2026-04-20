@@ -1,16 +1,24 @@
+"use client";
+
 import BackgroundParticles from "@/components/home/BackgroundParticles";
 import ChestSlots from "@/components/home/ChestSlots";
 import FloatingButtons from "@/components/home/FloatingButtons";
 import Header from "@/components/home/Header";
+import NpcParade from "@/components/home/NpcParade";
 import QuestCard from "@/components/home/QuestCard";
 import StartButton from "@/components/home/StartButton";
 import TabBar from "@/components/home/TabBar";
 import VillageSilhouette from "@/components/home/VillageSilhouette";
-import NpcParade from "@/components/home/NpcParade";
+import { useState } from "react";
 
 export default function Home() {
+  const [schatkamerVisible, setSchatkamerVisible] = useState(true);
+
   return (
-    <div className="flex min-h-[100svh] flex-col items-center" style={{ background: "var(--bg-dark)" }}>
+    <div
+      className="flex min-h-[100svh] flex-col items-center"
+      style={{ background: "var(--bg-dark)" }}
+    >
       <div
         className="relative flex w-full flex-col vignette"
         style={{
@@ -23,7 +31,6 @@ export default function Home() {
         <BackgroundParticles />
         <VillageSilhouette />
 
-        {/* Ambient gold glow from the village */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-0"
@@ -46,8 +53,8 @@ export default function Home() {
           <StartButton />
         </main>
 
-        <NpcParade />
-        <ChestSlots />
+        <NpcParade hidden={schatkamerVisible} />
+        <ChestSlots onVisibilityChange={setSchatkamerVisible} />
         <FloatingButtons />
         <TabBar />
       </div>

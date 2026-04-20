@@ -4,6 +4,7 @@ import ChestSlotSprite from "@/components/kist/ChestSlotSprite";
 import { PadlockIcon } from "@/components/ui/GameIcon";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
+import { useEffect, useRef } from "react";
 
 type SlotProps = {
   children: ReactNode;
@@ -12,6 +13,9 @@ type SlotProps = {
   onClick?: () => void;
   badge?: string;
 };
+
+const SLOT_HEIGHT = 86;
+const SPRITE_WRAPPER_HEIGHT = 64;
 
 function Slot({ children, ready, glow, onClick, badge }: SlotProps) {
   return (
@@ -24,12 +28,12 @@ function Slot({ children, ready, glow, onClick, badge }: SlotProps) {
         className={`flex flex-col items-center justify-center${ready ? " chest-ready" : ""}`}
         style={{
           width: "100%",
-          height: 60,
+          height: SLOT_HEIGHT,
           background: "rgba(45, 26, 0, 0.8)",
           border: "1.5px solid var(--gold-dark)",
           borderRadius: 10,
           boxShadow: glow,
-          gap: 2,
+          gap: 4,
           cursor: onClick ? "pointer" : "default",
         }}
       >
@@ -57,10 +61,27 @@ function Slot({ children, ready, glow, onClick, badge }: SlotProps) {
   );
 }
 
-export default function ChestSlots() {
+export default function ChestSlots({
+  onVisibilityChange,
+}: {
+  onVisibilityChange?: (visible: boolean) => void;
+}) {
   const router = useRouter();
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!onVisibilityChange || !rootRef.current) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => onVisibilityChange(entry.isIntersecting),
+      { threshold: 0.01 },
+    );
+    obs.observe(rootRef.current);
+    return () => obs.disconnect();
+  }, [onVisibilityChange]);
+
   return (
     <div
+      ref={rootRef}
       className="fixed left-1/2 -translate-x-1/2 flex flex-col gap-1.5"
       style={{
         bottom: 155,
@@ -85,13 +106,17 @@ export default function ChestSlots() {
         {/* Slot 1: timer running (bronze) */}
         <Slot glow="0 0 8px rgba(255, 179, 71, 0.3)">
           <div
+            className="flex items-center justify-center"
             style={{
-              transform: "scale(0.55)",
-              transformOrigin: "center",
-              marginTop: -6,
+              width: "100%",
+              height: SPRITE_WRAPPER_HEIGHT,
+              overflow: "hidden",
+              filter: "brightness(1.2)",
             }}
           >
-            <ChestSlotSprite type="bronze" animated scale={3} />
+            <div style={{ transform: "scale(0.65)" }}>
+              <ChestSlotSprite type="bronze" animated scale={3} />
+            </div>
           </div>
           <span
             className="font-cinzel tabular-nums"
@@ -101,20 +126,24 @@ export default function ChestSlots() {
           </span>
         </Slot>
 
-        {/* Slot 2: ready to open (silver) */}
+        {/* Slot 2: ready (silver) with shine */}
         <Slot
           ready
           badge="NIEUW"
           onClick={() => router.push("/kist?type=silver")}
         >
           <div
+            className="flex items-center justify-center"
             style={{
-              transform: "scale(0.55)",
-              transformOrigin: "center",
-              marginTop: -6,
+              width: "100%",
+              height: SPRITE_WRAPPER_HEIGHT,
+              overflow: "hidden",
+              animation: "chest-shine 2s ease-in-out infinite",
             }}
           >
-            <ChestSlotSprite type="silver" animated isReady scale={3} />
+            <div style={{ transform: "scale(0.65)" }}>
+              <ChestSlotSprite type="silver" animated isReady scale={3} />
+            </div>
           </div>
           <span
             className="font-cinzel"

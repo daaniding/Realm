@@ -18,7 +18,7 @@ const NPCS: NPC[] = [
 
 const BASE = "/assets/npcs/walk/spritesheet%20format";
 
-export default function NpcParade() {
+export default function NpcParade({ hidden = false }: { hidden?: boolean }) {
   return (
     <div
       aria-hidden
@@ -27,6 +27,8 @@ export default function NpcParade() {
         bottom: 75,
         height: 100,
         zIndex: 5,
+        opacity: hidden ? 0 : 1,
+        transition: "opacity 300ms ease",
       }}
     >
       {NPCS.map((npc) => (

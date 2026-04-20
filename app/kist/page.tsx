@@ -3,6 +3,7 @@
 import ChestItem from "@/components/kist/ChestItem";
 import ChestSprite from "@/components/kist/ChestSprite";
 import ExplosionParticles from "@/components/kist/ExplosionParticles";
+import Smith from "@/components/kist/Smith";
 import TapParticle from "@/components/kist/TapParticle";
 import {
   CastleIcon,
@@ -122,6 +123,7 @@ function KistView() {
   const [col, setCol] = useState(0);
   const [row, setRow] = useState(chest.closedRow);
   const [shakeKey, setShakeKey] = useState(0);
+  const [smithAttacking, setSmithAttacking] = useState(false);
   const [bigShake, setBigShake] = useState(false);
   const [flashLayers, setFlashLayers] = useState(0);
   const [flashKey, setFlashKey] = useState(0);
@@ -153,23 +155,23 @@ function KistView() {
   if (!thresholdsRef.current) {
     const tierRoll = Math.random();
     let openAt: number;
-    if (tierRoll < 0.70) {
-      // Small: 70% — openAt 3..10
-      openAt = Math.floor(Math.random() * 8) + 3;
-    } else if (tierRoll < 0.88) {
-      // Medium: 18% — openAt 14..19
-      openAt = Math.floor(Math.random() * 6) + 14;
+    if (tierRoll < 0.78) {
+      // Small: 78% — openAt 3..8
+      openAt = Math.floor(Math.random() * 6) + 3;
+    } else if (tierRoll < 0.91) {
+      // Medium: 13% — openAt 12..16
+      openAt = Math.floor(Math.random() * 5) + 12;
     } else if (tierRoll < 0.97) {
-      // Large: 9% — openAt 22..26
-      openAt = Math.floor(Math.random() * 5) + 22;
+      // Large: 6% — openAt 19..22
+      openAt = Math.floor(Math.random() * 4) + 19;
     } else {
-      // Mega: 3% — openAt 28..31
-      openAt = Math.floor(Math.random() * 4) + 28;
+      // Mega: 3% — openAt 25..27
+      openAt = Math.floor(Math.random() * 3) + 25;
     }
     thresholdsRef.current = {
-      medium: openAt >= 14 ? Math.floor(openAt * 0.55) : null,
-      large: openAt >= 22 ? Math.floor(openAt * 0.72) : null,
-      mega: openAt >= 28 ? Math.floor(openAt * 0.88) : null,
+      medium: openAt >= 12 ? Math.floor(openAt * 0.55) : null,
+      large: openAt >= 19 ? Math.floor(openAt * 0.72) : null,
+      mega: openAt >= 25 ? Math.floor(openAt * 0.88) : null,
       open: openAt,
     };
   }
@@ -324,13 +326,15 @@ function KistView() {
 
   const handleTap = () => {
     if (phase !== "idle" && phase !== "tapping") return;
+    if (smithAttacking) return; // wait for current swing
     if (phase === "idle") {
       setPhase("tapping");
       setShowTapPrompt(false);
     }
+    // Smith starts swinging; shake fires on hammer impact
+    setSmithAttacking(true);
     const next = tapCount + 1;
     setTapCount(next);
-    setShakeKey((k) => k + 1);
 
     const freq = Math.min(800, 300 + next * 40);
     playSound([{ freq, start: 0, gain: 0.15, duration: 0.1 }]);
@@ -506,13 +510,34 @@ function KistView() {
         <div style={{ width: "25%" }} />
       </div>
 
-      {/* Main */}
-      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 pb-6">
+      {/* Chest stage — fixed overlay, always centered regardless of size */}
+      <div
+        aria-hidden={false}
+        className="fixed inset-0 flex items-center justify-center"
+        style={{ pointerEvents: "none", zIndex: 5 }}
+      >
         <div
-          ref={chestStageRef}
-          className="relative flex items-center justify-center"
-          style={{ width: "100%", maxWidth: 360, height: 300 }}
+          className="relative flex items-end justify-center"
+          style={{ gap: 16 }}
         >
+          {/* Smith to the left of chest (hidden during opening/items) */}
+          {(phase === "idle" || phase === "tapping") && (
+            <div style={{ pointerEvents: "none" }}>
+              <Smith
+                isAttacking={smithAttacking}
+                onAttackComplete={() => setSmithAttacking(false)}
+                onHammerImpact={() => setShakeKey((k) => k + 1)}
+                scale={4}
+              />
+            </div>
+          )}
+
+          {/* Chest + FX */}
+          <div
+            ref={chestStageRef}
+            className="relative"
+            style={{ pointerEvents: "auto" }}
+          >
           {popup && (
             <span
               key={popupKey}
@@ -641,8 +666,12 @@ function KistView() {
                 }}
               />
             ))}
+          </div>
         </div>
+      </div>
 
+      {/* Main — items, continue, prompt; chest is a separate fixed overlay */}
+      <main className="relative z-10 flex flex-1 flex-col items-center justify-end px-4 pb-6">
         {phase === "idle" && showTapPrompt && (
           <div className="flex flex-col items-center" style={{ marginTop: 24 }}>
             <span
