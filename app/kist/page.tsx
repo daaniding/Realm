@@ -186,8 +186,8 @@ function KistView() {
   });
   const [scaleReady, setScaleReady] = useState(false);
   useEffect(() => {
-    const maxW = window.innerWidth * 0.72;
-    const maxH = window.innerHeight * 0.42;
+    const maxW = window.innerWidth * 0.35;
+    const maxH = window.innerHeight * 0.28;
     const max = Math.min(maxW / 288, maxH / 192);
     scaleRef.current = {
       small: max * 0.45,
@@ -532,7 +532,7 @@ function KistView() {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: 16,
+          gap: 20,
           zIndex: 10,
           width: "100%",
           maxWidth: 430,
@@ -546,7 +546,7 @@ function KistView() {
             flexDirection: "row",
             alignItems: "flex-end",
             justifyContent: "center",
-            gap: 32,
+            gap: 16,
           }}
         >
           {(phase === "idle" || phase === "tapping") && (

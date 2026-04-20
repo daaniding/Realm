@@ -28,16 +28,17 @@ function Slot({ children, ready, glow, onClick, badge }: SlotProps) {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          padding: 8,
+          padding: 6,
           gap: 4,
           width: "100%",
           height: "100%",
-          minHeight: 130,
+          minHeight: 110,
           background: "rgba(45, 26, 0, 0.8)",
           border: "1.5px solid var(--gold-dark)",
           borderRadius: 10,
           boxShadow: glow,
           cursor: onClick ? "pointer" : "default",
+          overflow: "hidden",
         }}
       >
         {children}
@@ -114,6 +115,11 @@ export default function ChestSlots({
               margin: "0 auto",
               width: 144,
               height: 96,
+              maxWidth: "100%",
+              maxHeight: 80,
+              overflow: "hidden",
+              transform: "scale(0.85)",
+              transformOrigin: "center center",
               filter: "brightness(1.3)",
             }}
           >
@@ -145,6 +151,11 @@ export default function ChestSlots({
               margin: "0 auto",
               width: 144,
               height: 96,
+              maxWidth: "100%",
+              maxHeight: 80,
+              overflow: "hidden",
+              transform: "scale(0.85)",
+              transformOrigin: "center center",
               filter: "brightness(1.3)",
               animation: "chest-shine 2s ease-in-out infinite",
             }}

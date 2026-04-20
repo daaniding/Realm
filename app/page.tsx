@@ -1,5 +1,3 @@
-"use client";
-
 import BackgroundParticles from "@/components/home/BackgroundParticles";
 import ChestSlots from "@/components/home/ChestSlots";
 import FloatingButtons from "@/components/home/FloatingButtons";
@@ -9,11 +7,8 @@ import QuestCard from "@/components/home/QuestCard";
 import StartButton from "@/components/home/StartButton";
 import TabBar from "@/components/home/TabBar";
 import VillageSilhouette from "@/components/home/VillageSilhouette";
-import { useState } from "react";
 
 export default function Home() {
-  const [schatkamerVisible, setSchatkamerVisible] = useState(true);
-
   return (
     <div
       className="flex min-h-[100svh] flex-col items-center"
@@ -53,8 +48,8 @@ export default function Home() {
           <StartButton />
         </main>
 
-        <NpcParade hidden={schatkamerVisible} />
-        <ChestSlots onVisibilityChange={setSchatkamerVisible} />
+        <NpcParade />
+        <ChestSlots />
         <FloatingButtons />
         <TabBar />
       </div>
