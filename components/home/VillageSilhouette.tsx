@@ -3,41 +3,45 @@ export default function VillageSilhouette() {
 
   return (
     <>
-      {/* Moon + halo, positioned independently so mask doesn't fade it */}
+      {/* Moon halo */}
       <div
         aria-hidden
         className="pointer-events-none absolute"
         style={{
-          top: 110,
-          right: 36,
-          width: 90,
-          height: 90,
+          top: 100,
+          right: 28,
+          width: 96,
+          height: 96,
           zIndex: 1,
           background:
-            "radial-gradient(circle, rgba(255,215,0,0.55) 0%, rgba(255,215,0,0.18) 40%, rgba(255,215,0,0) 70%)",
+            "radial-gradient(circle, rgba(255,215,0,0.6) 0%, rgba(255,215,0,0.2) 35%, rgba(255,215,0,0) 70%)",
         }}
       />
+      {/* Moon disc (40px) */}
       <div
         aria-hidden
         className="pointer-events-none absolute rounded-full"
         style={{
-          top: 140,
-          right: 66,
-          width: 26,
-          height: 26,
+          top: 128,
+          right: 56,
+          width: 40,
+          height: 40,
           zIndex: 1,
           background: "rgba(255, 215, 0, 0.6)",
-          boxShadow: "0 0 24px rgba(255, 215, 0, 0.5)",
+          boxShadow: "0 0 18px rgba(255, 215, 0, 0.45)",
         }}
       />
 
+      {/* Village silhouette: shifted up 120px, scaled 1.2, sent behind UI */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0"
         style={{
-          bottom: 70,
+          bottom: 190,
           height: 220,
-          zIndex: 1,
+          zIndex: 0,
+          transform: "scale(1.2)",
+          transformOrigin: "bottom center",
           WebkitMaskImage:
             "linear-gradient(to top, #000 30%, rgba(0,0,0,0.7) 60%, transparent 100%)",
           maskImage:

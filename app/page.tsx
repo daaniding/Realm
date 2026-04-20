@@ -5,6 +5,7 @@ import QuestCard from "@/components/home/QuestCard";
 import StartButton from "@/components/home/StartButton";
 import TabBar from "@/components/home/TabBar";
 import VillageSilhouette from "@/components/home/VillageSilhouette";
+import Witch from "@/components/home/Witch";
 
 export default function Home() {
   return (
@@ -44,6 +45,7 @@ export default function Home() {
           <StartButton />
         </main>
 
+        <Witch />
         <FloatingButtons />
         <TabBar />
       </div>
