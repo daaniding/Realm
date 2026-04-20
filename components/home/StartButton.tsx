@@ -1,7 +1,17 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+
 export default function StartButton() {
+  const router = useRouter();
   return (
     <button
       type="button"
+      onClick={() =>
+        router.push(
+          "/timer?duration=1800&name=Focus+%26+Conquer&reward=silver",
+        )
+      }
       className="btn-start font-cinzel select-none"
       style={{
         width: "calc(100% - 32px)",

@@ -57,37 +57,83 @@ function TimerView() {
     gold: 400,
   }[rewardKey] ?? 150;
 
-  const [remaining, setRemaining] = useState(duration);
-  const [status, setStatus] = useState<"running" | "paused" | "completed">(
-    "running",
-  );
+  const [timeLeft, setTimeLeft] = useState(duration);
+  const [isRunning, setIsRunning] = useState(true);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
   const [quoteIndex, setQuoteIndex] = useState(0);
   const [quoteKey, setQuoteKey] = useState(0);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // Tick every second when running
-  const statusRef = useRef(status);
-  statusRef.current = status;
+  const playSuccessSound = () => {
+    try {
+      const Ctx =
+        (window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext })
+            .webkitAudioContext) as typeof AudioContext;
+      const ctx = new Ctx();
+      [523, 659, 784].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        const start = ctx.currentTime + i * 0.1;
+        gain.gain.setValueAtTime(0.3, start);
+        gain.gain.exponentialRampToValueAtTime(0.01, start + 0.5);
+        osc.start(start);
+        osc.stop(start + 0.55);
+      });
+    } catch {
+      // AudioContext unavailable or blocked — ignore
+    }
+  };
+
+  const handleTimerComplete = () => {
+    setIsRunning(false);
+    setIsCompleted(true);
+    playSuccessSound();
+    setTimeout(() => {
+      router.push("/kist");
+    }, 2000);
+  };
+
+  // Countdown
+  const runningRef = useRef(isRunning);
+  runningRef.current = isRunning;
   useEffect(() => {
     const id = setInterval(() => {
-      if (statusRef.current !== "running") return;
-      setRemaining((r) => {
-        if (r <= 1) {
-          setStatus("completed");
-          return 0;
-        }
-        return r - 1;
+      if (!runningRef.current) return;
+      setTimeLeft((t) => {
+        if (t <= 1) return 0;
+        return t - 1;
       });
     }, 1000);
     return () => clearInterval(id);
   }, []);
 
-  // Pause when page is hidden, resume when visible
+  // When timeLeft hits 0, fire completion once
+  const completedRef = useRef(false);
+  useEffect(() => {
+    if (timeLeft <= 0 && !completedRef.current) {
+      completedRef.current = true;
+      handleTimerComplete();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeLeft]);
+
+  // Pause when hidden, resume when visible
   useEffect(() => {
     function onVisibility() {
-      if (statusRef.current === "completed") return;
-      if (document.visibilityState === "hidden") setStatus("paused");
-      else setStatus("running");
+      if (completedRef.current) return;
+      if (document.hidden) {
+        setIsRunning(false);
+        setIsPaused(true);
+      } else {
+        setIsRunning(true);
+        setIsPaused(false);
+      }
     }
     document.addEventListener("visibilitychange", onVisibility);
     return () =>
@@ -106,8 +152,23 @@ function TimerView() {
   // Circle geometry
   const R = 136;
   const C = 2 * Math.PI * R;
-  const progress = Math.max(0, Math.min(1, remaining / duration));
+  const progress = isCompleted
+    ? 1
+    : Math.max(0, Math.min(1, timeLeft / duration));
   const dashOffset = C * (1 - progress);
+
+  // Confetti only on completion
+  const confetti = useMemo(
+    () =>
+      Array.from({ length: 28 }, (_, i) => ({
+        left: (i * 37) % 100,
+        delay: (i % 10) * 0.08,
+        duration: 2.2 + (i % 5) * 0.35,
+        hue: i % 3 === 0 ? "#FFD700" : i % 3 === 1 ? "#FFB347" : "#FF8C00",
+        rotate: (i * 23) % 360,
+      })),
+    [],
+  );
 
   return (
     <div
@@ -197,12 +258,17 @@ function TimerView() {
               r={R}
               fill="none"
               stroke="#FFD700"
-              strokeWidth="8"
+              strokeWidth={isCompleted ? 12 : 8}
               strokeLinecap="round"
               strokeDasharray={C}
               strokeDashoffset={dashOffset}
               transform="rotate(-90 140 140)"
-              style={{ transition: "stroke-dashoffset 1s linear" }}
+              style={{
+                transition: "stroke-dashoffset 1s linear, stroke-width 0.4s ease",
+                filter: isCompleted
+                  ? "drop-shadow(0 0 22px rgba(255,215,0,0.95))"
+                  : undefined,
+              }}
             />
           </svg>
           <div
@@ -222,7 +288,7 @@ function TimerView() {
                 lineHeight: 1,
               }}
             >
-              {fmt(remaining)}
+              {fmt(timeLeft)}
             </span>
             <span
               className="font-cinzel"
@@ -239,7 +305,7 @@ function TimerView() {
 
         {/* Status */}
         <div style={{ height: 28, marginTop: 20 }}>
-          {status === "paused" ? (
+          {isCompleted ? null : isPaused ? (
             <span
               className="font-cinzel paused-pulse"
               style={{
@@ -250,13 +316,6 @@ function TimerView() {
               }}
             >
               GEPAUZEERD
-            </span>
-          ) : status === "completed" ? (
-            <span
-              className="font-cinzel"
-              style={{ fontSize: 16, fontWeight: 700, color: "#FFD700" }}
-            >
-              VOLTOOID
             </span>
           ) : (
             <span
@@ -341,6 +400,49 @@ function TimerView() {
           </span>
         </div>
       </div>
+
+      {/* Completion overlay */}
+      {isCompleted && (
+        <>
+          <div
+            aria-hidden
+            className="completion-flash pointer-events-none fixed inset-0 z-40"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none fixed inset-0 z-40 overflow-hidden"
+          >
+            {confetti.map((c, i) => (
+              <span
+                key={i}
+                className="confetti"
+                style={{
+                  left: `${c.left}%`,
+                  background: c.hue,
+                  animationDelay: `${c.delay}s`,
+                  animationDuration: `${c.duration}s`,
+                  transform: `rotate(${c.rotate}deg)`,
+                }}
+              />
+            ))}
+          </div>
+          <div className="pointer-events-none fixed inset-0 z-45 flex items-center justify-center">
+            <span
+              className="pop-in font-cinzel"
+              style={{
+                fontSize: 48,
+                fontWeight: 900,
+                letterSpacing: "4px",
+                color: "#FFD700",
+                textShadow:
+                  "0 0 18px rgba(255, 215, 0, 0.85), 0 2px 0 rgba(0,0,0,0.6)",
+              }}
+            >
+              VOLTOOID!
+            </span>
+          </div>
+        </>
+      )}
 
       {/* Cancel confirm dialog */}
       {showConfirm && (
