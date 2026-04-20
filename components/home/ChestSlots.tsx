@@ -14,8 +14,7 @@ type SlotProps = {
   badge?: string;
 };
 
-const SLOT_HEIGHT = 86;
-const SPRITE_WRAPPER_HEIGHT = 64;
+const SPRITE_WRAPPER_HEIGHT = 72;
 
 function Slot({ children, ready, glow, onClick, badge }: SlotProps) {
   return (
@@ -25,16 +24,17 @@ function Slot({ children, ready, glow, onClick, badge }: SlotProps) {
     >
       <div
         onClick={onClick}
-        className={`flex flex-col items-center justify-center${ready ? " chest-ready" : ""}`}
+        className={`flex flex-col items-center${ready ? " chest-ready" : ""}`}
         style={{
           width: "100%",
-          height: SLOT_HEIGHT,
+          padding: "8px 4px",
+          gap: 4,
           background: "rgba(45, 26, 0, 0.8)",
           border: "1.5px solid var(--gold-dark)",
           borderRadius: 10,
           boxShadow: glow,
-          gap: 4,
           cursor: onClick ? "pointer" : "default",
+          justifyContent: "flex-start",
         }}
       >
         {children}
@@ -111,16 +111,22 @@ export default function ChestSlots({
               width: "100%",
               height: SPRITE_WRAPPER_HEIGHT,
               overflow: "hidden",
-              filter: "brightness(1.2)",
+              filter: "brightness(1.3)",
             }}
           >
-            <div style={{ transform: "scale(0.65)" }}>
+            <div style={{ margin: "0 auto", transform: "scale(0.7)" }}>
               <ChestSlotSprite type="bronze" animated scale={3} />
             </div>
           </div>
           <span
             className="font-cinzel tabular-nums"
-            style={{ fontSize: 11, fontWeight: 700, color: "#FFB347" }}
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: "#FFB347",
+              width: "100%",
+              textAlign: "center",
+            }}
           >
             41:13
           </span>
@@ -141,7 +147,7 @@ export default function ChestSlots({
               animation: "chest-shine 2s ease-in-out infinite",
             }}
           >
-            <div style={{ transform: "scale(0.65)" }}>
+            <div style={{ margin: "0 auto", transform: "scale(0.7)" }}>
               <ChestSlotSprite type="silver" animated isReady scale={3} />
             </div>
           </div>
@@ -152,6 +158,8 @@ export default function ChestSlots({
               fontWeight: 700,
               letterSpacing: "2px",
               color: "#FFD700",
+              width: "100%",
+              textAlign: "center",
             }}
           >
             OPEN!

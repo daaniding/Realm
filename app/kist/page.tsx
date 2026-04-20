@@ -510,19 +510,21 @@ function KistView() {
         <div style={{ width: "25%" }} />
       </div>
 
-      {/* Chest stage — fixed overlay, always centered regardless of size */}
-      <div
-        aria-hidden={false}
-        className="fixed inset-0 flex items-center justify-center"
-        style={{ pointerEvents: "none", zIndex: 5 }}
+      {/* Middle zone — flex column, centered between top (56) and bottom (80) */}
+      <main
+        className="relative z-10 flex flex-col items-center justify-center px-4"
+        style={{ height: "calc(100vh - 56px - 80px)" }}
       >
+        {/* Smith + chest row, bottom-aligned */}
         <div
-          className="relative flex items-end justify-center"
-          style={{ gap: 16 }}
+          className="flex flex-row items-end justify-center"
+          style={{ gap: 24, width: "100%" }}
         >
-          {/* Smith to the left of chest (hidden during opening/items) */}
           {(phase === "idle" || phase === "tapping") && (
-            <div style={{ pointerEvents: "none" }}>
+            <div
+              className="shrink-0"
+              style={{ pointerEvents: "none", alignSelf: "flex-end" }}
+            >
               <Smith
                 isAttacking={smithAttacking}
                 onAttackComplete={() => setSmithAttacking(false)}
@@ -532,11 +534,11 @@ function KistView() {
             </div>
           )}
 
-          {/* Chest + FX */}
+          {/* Chest stage */}
           <div
             ref={chestStageRef}
-            className="relative"
-            style={{ pointerEvents: "auto" }}
+            className="relative shrink-0"
+            style={{ width: 288, height: 192 }}
           >
           {popup && (
             <span
@@ -584,7 +586,7 @@ function KistView() {
             style={{
               position: "relative",
               transform: `scale(${scaleReady ? scaleRef.current[chestSize] : 0.5})`,
-              transformOrigin: "center center",
+              transformOrigin: "center bottom",
               transition:
                 "transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1)",
               visibility: scaleReady ? "visible" : "hidden",
@@ -668,12 +670,13 @@ function KistView() {
             ))}
           </div>
         </div>
-      </div>
 
-      {/* Main — items, continue, prompt; chest is a separate fixed overlay */}
-      <main className="relative z-10 flex flex-1 flex-col items-center justify-end px-4 pb-6">
+        {/* Prompt under the row */}
         {phase === "idle" && showTapPrompt && (
-          <div className="flex flex-col items-center" style={{ marginTop: 24 }}>
+          <div
+            className="flex flex-col items-center"
+            style={{ marginTop: 16, width: "100%", textAlign: "center" }}
+          >
             <span
               aria-hidden
               style={{
@@ -778,6 +781,9 @@ function KistView() {
           </button>
         )}
       </main>
+
+      {/* Bottom reserved zone (80px) */}
+      <div style={{ height: 80 }} />
 
       {flashLayers > 0 &&
         Array.from({ length: flashLayers }).map((_, i) => (
