@@ -5,6 +5,7 @@ import {
   CoinsIcon,
   CrossedSwordsIcon,
 } from "@/components/ui/GameIcon";
+import { getOrCreateUserId } from "@/lib/userId";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 
@@ -64,6 +65,37 @@ function TimerView() {
   const [quoteIndex, setQuoteIndex] = useState(0);
   const [quoteKey, setQuoteKey] = useState(0);
   const [showConfirm, setShowConfirm] = useState(false);
+  const userIdRef = useRef<string>("");
+
+  // Persist userId client-side + POST timer on mount
+  useEffect(() => {
+    const userId = getOrCreateUserId();
+    userIdRef.current = userId;
+    fetch("/api/timer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId,
+        startTime: Date.now(),
+        duration,
+        name,
+      }),
+    }).catch(() => {
+      // Non-blocking: UI continues even if Redis write fails
+    });
+  }, [duration, name]);
+
+  const patchStatus = (status: "running" | "paused" | "completed") => {
+    const userId = userIdRef.current;
+    if (!userId) return;
+    fetch("/api/timer", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, status }),
+    }).catch(() => {
+      // Non-blocking
+    });
+  };
 
   const playSuccessSound = () => {
     try {
@@ -94,6 +126,7 @@ function TimerView() {
     setIsRunning(false);
     setIsCompleted(true);
     playSuccessSound();
+    patchStatus("completed");
     setTimeout(() => {
       router.push("/kist");
     }, 2000);
@@ -123,16 +156,18 @@ function TimerView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft]);
 
-  // Pause when hidden, resume when visible
+  // Pause when hidden, resume when visible; sync status to Redis
   useEffect(() => {
     function onVisibility() {
       if (completedRef.current) return;
       if (document.hidden) {
         setIsRunning(false);
         setIsPaused(true);
+        patchStatus("paused");
       } else {
         setIsRunning(true);
         setIsPaused(false);
+        patchStatus("running");
       }
     }
     document.addEventListener("visibilitychange", onVisibility);
