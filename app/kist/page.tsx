@@ -116,13 +116,13 @@ function KistView() {
   const [shakeKey, setShakeKey] = useState(0);
   const [bigShake, setBigShake] = useState(false);
 
-  const [scale, setScale] = useState(1.5);
-  const maxScaleRef = useRef(1.5);
+  const [scale, setScale] = useState(1.0);
+  const maxScaleRef = useRef(1.0);
   useEffect(() => {
-    const maxW = window.innerWidth * 0.85;
-    const maxH = window.innerHeight * 0.5;
+    const maxW = window.innerWidth * 0.7;
+    const maxH = window.innerHeight * 0.4;
     maxScaleRef.current = Math.min(maxW / 288, maxH / 192);
-    setScale(maxScaleRef.current * 0.4);
+    setScale(maxScaleRef.current * 0.35);
   }, []);
   const [flashLayers, setFlashLayers] = useState(0);
   const [flashKey, setFlashKey] = useState(0);
@@ -301,12 +301,7 @@ function KistView() {
     setShakeKey((k) => k + 1);
     const next = tapCount + 1;
     setTapCount(next);
-    setScale((prev) =>
-      Math.min(
-        prev + (maxScaleRef.current * 0.6) / thresholds.open,
-        maxScaleRef.current,
-      ),
-    );
+    setScale((prev) => Math.min(prev + 0.06, maxScaleRef.current));
 
     const freq = Math.min(800, 300 + next * 40);
     playSound([{ freq, start: 0, gain: 0.15, duration: 0.1 }]);
