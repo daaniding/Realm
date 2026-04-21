@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface ArcherProps {
   isAttacking: boolean;
@@ -22,23 +22,29 @@ export default function Archer({
   onArrowImpact,
 }: ArcherProps) {
   const [attackFrame, setAttackFrame] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    if (!isAttacking) return;
-    setAttackFrame(0);
-    let f = 0;
-    const interval = setInterval(() => {
-      f += 1;
-      if (f === ARROW_RELEASE_FRAME) onArrowImpact();
-      if (f >= ATTACK_FRAMES) {
-        clearInterval(interval);
-        setAttackFrame(0);
-        onAttackComplete();
-        return;
-      }
-      setAttackFrame(f);
-    }, ATTACK_FRAME_MS);
-    return () => clearInterval(interval);
+    if (isAttacking) {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      let f = 0;
+      intervalRef.current = setInterval(() => {
+        setAttackFrame(f);
+        if (f === ARROW_RELEASE_FRAME) onArrowImpact();
+        f++;
+        if (f >= ATTACK_FRAMES) {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          setAttackFrame(0);
+          onAttackComplete();
+        }
+      }, ATTACK_FRAME_MS);
+    } else {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      setAttackFrame(0);
+    }
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAttacking]);
 

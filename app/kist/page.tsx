@@ -537,11 +537,17 @@ function KistView() {
             gap: 0,
           }}
         >
-          <Archer
-            isAttacking={archerAttacking}
-            onAttackComplete={() => setArcherAttacking(false)}
-            onArrowImpact={handleArrowImpact}
-          />
+          <div style={{ alignSelf: "flex-end" }}>
+            <ChestSprite
+              src={sheet}
+              row={row}
+              col={col}
+              glowColor={`rgba(${chest.rgb}, 0.8)`}
+              progress={progress}
+              shakeKey={shakeKey}
+              bigShake={bigShake}
+            />
+          </div>
           {arrowFlying && (
             <div
               key={arrowKey}
@@ -560,17 +566,11 @@ function KistView() {
               }}
             />
           )}
-          <div style={{ marginLeft: 8, alignSelf: "flex-end" }}>
-            <ChestSprite
-              src={sheet}
-              row={row}
-              col={col}
-              glowColor={`rgba(${chest.rgb}, 0.8)`}
-              progress={progress}
-              shakeKey={shakeKey}
-              bigShake={bigShake}
-            />
-          </div>
+          <Archer
+            isAttacking={archerAttacking}
+            onAttackComplete={() => setArcherAttacking(false)}
+            onArrowImpact={handleArrowImpact}
+          />
           <TapParticle color={chest.accent} burstKey={shakeKey} />
           <ExplosionParticles
             active={phase === "opening" || phase === "items"}
