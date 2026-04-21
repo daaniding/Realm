@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { type Reward } from "@/lib/kaarten";
 
 interface Props {
@@ -18,6 +18,21 @@ const RESOURCE_LABEL: Record<string, string> = {
   hout: "HOUT",
   steen: "STEEN",
   goud: "GOUD",
+};
+
+const RESOURCE_EMOJI: Record<string, string> = {
+  hout: "🪵",
+  steen: "🪨",
+  goud: "✨",
+};
+
+const COIN_EMOJI = "🪙";
+
+const RARITY_RGB: Record<string, string> = {
+  gewoon: "155,155,155",
+  zeldzaam: "74,144,217",
+  episch: "155,89,182",
+  legendarisch: "255,215,0",
 };
 
 const RARITY_KLEUR: Record<string, string> = {
@@ -42,9 +57,12 @@ function dotKleur(r: Reward): string {
 
 function introDuur(r: Reward): number {
   if (r.type !== "kaart") return 0;
-  if (r.rarity === "legendarisch") return 220;
-  if (r.rarity === "episch") return 200;
-  if (r.rarity === "zeldzaam") return 150;
+  if (
+    r.rarity === "legendarisch" ||
+    r.rarity === "episch" ||
+    r.rarity === "zeldzaam"
+  )
+    return 300;
   return 0;
 }
 
@@ -78,7 +96,6 @@ export default function RewardReveal({ rewards, onDoorgaan }: Props) {
   }
 
   const huidig = rewards[revealIndex];
-  const volgendeReward = rewards[revealIndex + 1];
   const intro = introDuur(huidig);
 
   return (
@@ -175,7 +192,7 @@ export default function RewardReveal({ rewards, onDoorgaan }: Props) {
           left: "50%",
           transform: "translateX(-50%)",
           display: "flex",
-          gap: 8,
+          gap: 12,
           alignItems: "center",
           zIndex: 103,
         }}
@@ -184,16 +201,17 @@ export default function RewardReveal({ rewards, onDoorgaan }: Props) {
           const isHuidig = i === revealIndex;
           const isVolgende = i === revealIndex + 1;
           const isGeweest = i < revealIndex;
-          const grootte = isHuidig ? 14 : 8;
-          let bg = "rgba(255,255,255,0.2)";
-          let opacity = 1;
+          const grootte = isHuidig ? 16 : 10;
+          let bg: string;
           if (isHuidig) {
             bg = dotKleur(r);
           } else if (isGeweest) {
-            bg = "rgba(255,255,255,0.4)";
+            bg = "rgba(255,255,255,0.5)";
+          } else {
+            // Volgende of nog verder weg: kleur per reward type, dimmer
+            bg = `${dotKleur(r)}`;
           }
-          const moetKnipperen =
-            isVolgende && volgendeReward?.type === "kaart";
+          const opacity = isHuidig ? 1 : isGeweest ? 0.5 : 0.25;
           return (
             <span
               key={i}
@@ -203,8 +221,8 @@ export default function RewardReveal({ rewards, onDoorgaan }: Props) {
                 borderRadius: "50%",
                 background: bg,
                 opacity,
-                transition: "width 200ms, height 200ms, background 200ms",
-                animation: moetKnipperen
+                transition: "width 200ms, height 200ms, opacity 200ms",
+                animation: isVolgende
                   ? "nextPulse 0.8s ease-in-out infinite"
                   : undefined,
                 boxShadow: isHuidig ? `0 0 12px ${bg}` : undefined,
@@ -245,7 +263,8 @@ function RewardKaart({ reward }: { reward: Reward }) {
           width: "100%",
           height: "100%",
           borderRadius: 20,
-          background: "linear-gradient(160deg, #2d1a00, #4a2d00)",
+          background:
+            "radial-gradient(ellipse at 50% 35%, rgba(255,215,0,0.18) 0%, transparent 60%), linear-gradient(160deg, #2d1a00, #4a2d00)",
           border: "2px solid #FFD700",
           boxShadow: "0 0 30px rgba(255,215,0,0.4)",
           display: "flex",
@@ -253,19 +272,34 @@ function RewardKaart({ reward }: { reward: Reward }) {
           alignItems: "center",
           justifyContent: "center",
           padding: 20,
+          position: "relative",
+          overflow: "hidden",
         }}
       >
         <div
+          aria-hidden
           style={{
-            width: 64,
-            height: 64,
-            borderRadius: "50%",
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 60,
             background:
-              "radial-gradient(circle at 30% 30%, #FFE060, #B8860B)",
-            boxShadow: "0 4px 16px rgba(255,215,0,0.5), inset 0 2px 4px rgba(255,255,255,0.3)",
-            marginBottom: 24,
+              "linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 100%)",
+            pointerEvents: "none",
           }}
         />
+        <span
+          aria-hidden
+          style={{
+            fontSize: 64,
+            lineHeight: 1,
+            marginBottom: 16,
+            filter: "drop-shadow(0 4px 10px rgba(255,215,0,0.5))",
+          }}
+        >
+          {COIN_EMOJI}
+        </span>
         <span
           className="font-cinzel"
           style={{
@@ -296,7 +330,7 @@ function RewardKaart({ reward }: { reward: Reward }) {
 
   if (reward.type === "resource") {
     const kleur = RESOURCE_KLEUR[reward.resource];
-    const bgGrad =
+    const baseGrad =
       reward.resource === "hout"
         ? "linear-gradient(160deg, #1a0f00, #2d1800)"
         : reward.resource === "steen"
@@ -308,7 +342,7 @@ function RewardKaart({ reward }: { reward: Reward }) {
           width: "100%",
           height: "100%",
           borderRadius: 20,
-          background: bgGrad,
+          background: `radial-gradient(ellipse at 50% 35%, ${kleur}33 0%, transparent 60%), ${baseGrad}`,
           border: `2px solid ${kleur}`,
           boxShadow: `0 0 25px ${kleur}55`,
           display: "flex",
@@ -316,19 +350,34 @@ function RewardKaart({ reward }: { reward: Reward }) {
           alignItems: "center",
           justifyContent: "center",
           padding: 20,
+          position: "relative",
+          overflow: "hidden",
         }}
       >
         <div
           aria-hidden
           style={{
-            width: 64,
-            height: 64,
-            borderRadius: 8,
-            background: kleur,
-            boxShadow: `0 4px 16px ${kleur}66, inset 0 2px 4px rgba(255,255,255,0.15)`,
-            marginBottom: 24,
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 60,
+            background:
+              "linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 100%)",
+            pointerEvents: "none",
           }}
         />
+        <span
+          aria-hidden
+          style={{
+            fontSize: 64,
+            lineHeight: 1,
+            marginBottom: 16,
+            filter: `drop-shadow(0 4px 10px ${kleur}77)`,
+          }}
+        >
+          {RESOURCE_EMOJI[reward.resource]}
+        </span>
         <span
           className="font-cinzel"
           style={{
@@ -359,7 +408,8 @@ function RewardKaart({ reward }: { reward: Reward }) {
 
   // KAART
   const kleur = RARITY_KLEUR[reward.rarity];
-  const bgGrad =
+  const rgb = RARITY_RGB[reward.rarity];
+  const baseGrad =
     reward.rarity === "legendarisch"
       ? "linear-gradient(160deg, #1a1200, #2d2000)"
       : reward.rarity === "episch"
@@ -367,6 +417,7 @@ function RewardKaart({ reward }: { reward: Reward }) {
         : reward.rarity === "zeldzaam"
           ? "linear-gradient(160deg, #0a1628, #0d2040)"
           : "linear-gradient(160deg, #1a1a1a, #2a2a2a)";
+  const bgGrad = `radial-gradient(ellipse at 50% 35%, rgba(${rgb},0.22) 0%, transparent 65%), ${baseGrad}`;
   const glow =
     reward.rarity === "legendarisch"
       ? "0 0 35px rgba(255,215,0,0.7)"
@@ -389,12 +440,26 @@ function RewardKaart({ reward }: { reward: Reward }) {
         alignItems: "center",
         position: "relative",
         padding: 16,
+        overflow: "hidden",
         animation:
           reward.rarity === "legendarisch"
             ? "legendary-shimmer 1.8s ease-in-out infinite"
             : undefined,
       }}
     >
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 70,
+          background:
+            "linear-gradient(180deg, rgba(0,0,0,0.45) 0%, transparent 100%)",
+          pointerEvents: "none",
+        }}
+      />
       {/* Rarity badge */}
       <span
         className="font-cinzel"
