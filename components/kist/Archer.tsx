@@ -11,6 +11,7 @@ interface ArcherProps {
 const ATTACK_FRAMES = 16;
 const ATTACK_FRAME_MS = 80;
 const ARROW_RELEASE_FRAME = 8;
+const FRAME_PX = 192;
 
 const SHEET_ATTACK =
   "/assets/heroes/archer/Spritesheets/archer_attack_arrow_basic-Sheet.png";
@@ -48,43 +49,39 @@ export default function Archer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAttacking]);
 
-  if (isAttacking) {
-    const bgX = (attackFrame / (ATTACK_FRAMES - 1)) * 100;
-    return (
+  const bgImage = isAttacking ? SHEET_ATTACK : SHEET_IDLE;
+  const bgSize = isAttacking
+    ? `${ATTACK_FRAMES * FRAME_PX}px ${FRAME_PX}px`
+    : `${FRAME_PX}px ${FRAME_PX}px`;
+  const bgPos = isAttacking ? `${-attackFrame * FRAME_PX}px 0px` : `0px 0px`;
+
+  return (
+    <>
+      {/* preload attack sheet so the first frame is never blank */}
+      <img
+        src={SHEET_ATTACK}
+        alt=""
+        aria-hidden
+        style={{ position: "absolute", width: 0, height: 0, opacity: 0 }}
+      />
       <div
         aria-hidden
         className="pixel"
         style={{
-          width: 192,
-          height: 192,
-          backgroundImage: `url('${SHEET_ATTACK}')`,
-          backgroundSize: `${ATTACK_FRAMES * 100}% 100%`,
-          backgroundPosition: `${bgX}% 0%`,
+          width: FRAME_PX,
+          height: FRAME_PX,
+          backgroundImage: `url('${bgImage}')`,
+          backgroundSize: bgSize,
+          backgroundPosition: bgPos,
           backgroundRepeat: "no-repeat",
           imageRendering: "pixelated",
           flexShrink: 0,
           alignSelf: "flex-end",
+          filter: isAttacking
+            ? undefined
+            : "drop-shadow(0 0 8px rgba(100,200,100,0.4))",
         }}
       />
-    );
-  }
-
-  return (
-    <div
-      aria-hidden
-      className="pixel"
-      style={{
-        width: 192,
-        height: 192,
-        backgroundImage: `url('${SHEET_IDLE}')`,
-        backgroundSize: "100% 100%",
-        backgroundPosition: "0% 0%",
-        backgroundRepeat: "no-repeat",
-        imageRendering: "pixelated",
-        flexShrink: 0,
-        alignSelf: "flex-end",
-        filter: "drop-shadow(0 0 8px rgba(100,200,100,0.4))",
-      }}
-    />
+    </>
   );
 }

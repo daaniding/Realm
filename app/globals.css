@@ -371,5 +371,5 @@ html, body {
 
 @keyframes arrow-fly {
   from { transform: translateX(0); }
-  to { transform: translateX(120px); }
+  to { transform: translateX(-120px); }
 }

@@ -554,13 +554,13 @@ function KistView() {
               aria-hidden
               style={{
                 position: "absolute",
-                left: 180,
+                right: 150,
                 bottom: 72,
                 width: 24,
                 height: 4,
-                background: "linear-gradient(to right, #8B4513, #FFD700)",
+                background: "linear-gradient(to left, #8B4513, #FFD700)",
                 borderRadius: 2,
-                transformOrigin: "left center",
+                transformOrigin: "right center",
                 animation: "arrow-fly 150ms linear forwards",
                 zIndex: 4,
               }}
