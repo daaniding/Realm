@@ -72,7 +72,6 @@ const CHESTS: Record<ChestType, ChestConfig> = {
   },
 };
 
-const MAX_SCALE = 3.8;
 
 const SIZE_IDLE_MS: Record<ChestSize, number> = {
   small: 200,
@@ -121,7 +120,13 @@ function KistView() {
   const [shakeKey, setShakeKey] = useState(0);
   const [bigShake, setBigShake] = useState(false);
 
-  const [scale, setScale] = useState(1.2);
+  const [scale, setScale] = useState(0.8);
+  const maxScaleRef = useRef(2.0);
+  useEffect(() => {
+    const maxW = window.innerWidth * 0.7;
+    const maxH = window.innerHeight * 0.4;
+    maxScaleRef.current = Math.min(maxW / 192, maxH / 192);
+  }, []);
   const [flashLayers, setFlashLayers] = useState(0);
   const [flashKey, setFlashKey] = useState(0);
   const [screenShaking, setScreenShaking] = useState(false);
@@ -224,9 +229,12 @@ function KistView() {
 
   const triggerSizeUpgrade = (newSize: Exclude<ChestSize, "small">) => {
     setChestSize(newSize);
-    if (newSize === "medium") setScale((prev) => Math.max(prev, 2.0));
-    else if (newSize === "large") setScale((prev) => Math.max(prev, 2.8));
-    else if (newSize === "mega") setScale((prev) => Math.max(prev, 3.6));
+    if (newSize === "medium")
+      setScale((prev) => Math.max(prev, maxScaleRef.current * 0.45));
+    else if (newSize === "large")
+      setScale((prev) => Math.max(prev, maxScaleRef.current * 0.7));
+    else if (newSize === "mega")
+      setScale((prev) => Math.max(prev, maxScaleRef.current * 0.9));
     setRingKey((k) => k + 1);
     setPopup(POPUP_SPEC[newSize]);
     setPopupKey((k) => k + 1);
@@ -296,7 +304,12 @@ function KistView() {
     setShakeKey((k) => k + 1);
     const next = tapCount + 1;
     setTapCount(next);
-    setScale((prev) => Math.min(prev + 0.04, MAX_SCALE));
+    setScale((prev) =>
+      Math.min(
+        prev + (maxScaleRef.current - 0.8) / thresholds.open,
+        maxScaleRef.current,
+      ),
+    );
 
     const freq = Math.min(800, 300 + next * 40);
     playSound([{ freq, start: 0, gain: 0.15, duration: 0.1 }]);
