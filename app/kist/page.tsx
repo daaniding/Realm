@@ -2,6 +2,7 @@
 
 import ChestItem from "@/components/kist/ChestItem";
 import ChestSprite from "@/components/kist/ChestSprite";
+import DarkKnight from "@/components/kist/DarkKnight";
 import ExplosionParticles from "@/components/kist/ExplosionParticles";
 import TapParticle from "@/components/kist/TapParticle";
 import {
@@ -117,6 +118,7 @@ function KistView() {
   const [chestSize, setChestSize] = useState<ChestSize>("small");
   const [tapCount, setTapCount] = useState(0);
   const [phase, setPhase] = useState<Phase>("idle");
+  const [knightAttacking, setKnightAttacking] = useState(false);
   const [col, setCol] = useState(0);
   const [row, setRow] = useState(chest.closedRow);
   const [shakeKey, setShakeKey] = useState(0);
@@ -305,7 +307,7 @@ function KistView() {
     }, 2000 + (ITEM_SETS[typeParam]?.[chestSize]?.length ?? 3) * 200);
   };
 
-  const handleTap = () => {
+  const executeTap = () => {
     if (phase !== "idle" && phase !== "tapping") return;
     if (phase === "idle") {
       setPhase("tapping");
@@ -342,6 +344,15 @@ function KistView() {
     if (next >= thresholds.open) {
       window.setTimeout(startOpening, 260);
     }
+  };
+
+  const handleTap = () => {
+    if (phase !== "idle" && phase !== "tapping") return;
+    setKnightAttacking(true);
+  };
+
+  const handleKnightImpact = () => {
+    executeTap();
   };
 
   const progress = Math.min(1, tapCount / thresholds.open);
@@ -512,6 +523,11 @@ function KistView() {
             transition:
               "transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1)",
             visibility: scaleReady ? "visible" : "hidden",
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "flex-end",
+            justifyContent: "center",
+            gap: 8,
           }}
         >
           <ChestSprite
@@ -522,6 +538,11 @@ function KistView() {
             progress={progress}
             shakeKey={shakeKey}
             bigShake={bigShake}
+          />
+          <DarkKnight
+            isAttacking={knightAttacking}
+            onAttackComplete={() => setKnightAttacking(false)}
+            onHammerImpact={handleKnightImpact}
           />
           <TapParticle color={chest.accent} burstKey={shakeKey} />
           <ExplosionParticles
