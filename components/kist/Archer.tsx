@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 interface ArcherProps {
   isAttacking: boolean;
@@ -10,6 +10,7 @@ interface ArcherProps {
 
 const ATTACK_FRAMES = 16;
 const ATTACK_FRAME_MS = 80;
+const ATTACK_DURATION_MS = ATTACK_FRAMES * ATTACK_FRAME_MS;
 const ARROW_RELEASE_FRAME = 8;
 const FRAME_PX = 192;
 
@@ -22,66 +23,57 @@ export default function Archer({
   onAttackComplete,
   onArrowImpact,
 }: ArcherProps) {
-  const [attackFrame, setAttackFrame] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const impactTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const completeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Preload attack sheet once so the first frame is never blank.
+  useEffect(() => {
+    const img = new Image();
+    img.src = SHEET_ATTACK;
+  }, []);
 
   useEffect(() => {
-    if (isAttacking) {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      let f = 0;
-      intervalRef.current = setInterval(() => {
-        setAttackFrame(f);
-        if (f === ARROW_RELEASE_FRAME) onArrowImpact();
-        f++;
-        if (f >= ATTACK_FRAMES) {
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          setAttackFrame(0);
-          onAttackComplete();
-        }
-      }, ATTACK_FRAME_MS);
-    } else {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      setAttackFrame(0);
-    }
+    if (impactTimerRef.current) clearTimeout(impactTimerRef.current);
+    if (completeTimerRef.current) clearTimeout(completeTimerRef.current);
+    if (!isAttacking) return;
+    impactTimerRef.current = setTimeout(
+      onArrowImpact,
+      ARROW_RELEASE_FRAME * ATTACK_FRAME_MS,
+    );
+    completeTimerRef.current = setTimeout(
+      onAttackComplete,
+      ATTACK_DURATION_MS,
+    );
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (impactTimerRef.current) clearTimeout(impactTimerRef.current);
+      if (completeTimerRef.current) clearTimeout(completeTimerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAttacking]);
 
-  const bgImage = isAttacking ? SHEET_ATTACK : SHEET_IDLE;
-  const bgSize = isAttacking
-    ? `${ATTACK_FRAMES * FRAME_PX}px ${FRAME_PX}px`
-    : `${FRAME_PX}px ${FRAME_PX}px`;
-  const bgPos = isAttacking ? `${-attackFrame * FRAME_PX}px 0px` : `0px 0px`;
-
   return (
-    <>
-      {/* preload attack sheet so the first frame is never blank */}
-      <img
-        src={SHEET_ATTACK}
-        alt=""
-        aria-hidden
-        style={{ position: "absolute", width: 0, height: 0, opacity: 0 }}
-      />
-      <div
-        aria-hidden
-        className="pixel"
-        style={{
-          width: FRAME_PX,
-          height: FRAME_PX,
-          backgroundImage: `url('${bgImage}')`,
-          backgroundSize: bgSize,
-          backgroundPosition: bgPos,
-          backgroundRepeat: "no-repeat",
-          imageRendering: "pixelated",
-          flexShrink: 0,
-          alignSelf: "flex-end",
-          filter: isAttacking
-            ? undefined
-            : "drop-shadow(0 0 8px rgba(100,200,100,0.4))",
-        }}
-      />
-    </>
+    <div
+      aria-hidden
+      className="pixel"
+      style={{
+        width: FRAME_PX,
+        height: FRAME_PX,
+        backgroundImage: `url('${isAttacking ? SHEET_ATTACK : SHEET_IDLE}')`,
+        backgroundSize: isAttacking
+          ? `${ATTACK_FRAMES * FRAME_PX}px ${FRAME_PX}px`
+          : `${FRAME_PX}px ${FRAME_PX}px`,
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "0px 0px",
+        imageRendering: "pixelated",
+        flexShrink: 0,
+        alignSelf: "flex-end",
+        animation: isAttacking
+          ? `archer-attack ${ATTACK_DURATION_MS}ms steps(${ATTACK_FRAMES}) forwards`
+          : "none",
+        filter: isAttacking
+          ? undefined
+          : "drop-shadow(0 0 8px rgba(100,200,100,0.4))",
+      }}
+    />
   );
 }

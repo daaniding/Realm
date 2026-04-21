@@ -373,3 +373,8 @@ html, body {
   from { transform: translateX(0); }
   to { transform: translateX(-120px); }
 }
+
+@keyframes archer-attack {
+  from { background-position: 0px 0px; }
+  to { background-position: -2880px 0px; }
+}
