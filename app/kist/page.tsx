@@ -122,13 +122,27 @@ function KistView() {
   const [shakeKey, setShakeKey] = useState(0);
   const [bigShake, setBigShake] = useState(false);
 
-  // Size-scale for chest (kept in a Map so spring transition is simple)
-  const SIZE_SCALE: Record<ChestSize, number> = {
+  // Dynamic chest-scale that fits 60vw × 40vh, so the chest never
+  // grows outside the screen even at "mega" size.
+  const scaleRef = useRef<Record<ChestSize, number>>({
     small: 1.0,
     medium: 1.5,
     large: 2.0,
     mega: 2.6,
-  };
+  });
+  const [scaleReady, setScaleReady] = useState(false);
+  useEffect(() => {
+    const maxW = window.innerWidth * 0.6;
+    const maxH = window.innerHeight * 0.4;
+    const max = Math.min(maxW / 288, maxH / 192);
+    scaleRef.current = {
+      small: max * 0.3,
+      medium: max * 0.5,
+      large: max * 0.7,
+      mega: max * 1.0,
+    };
+    setScaleReady(true);
+  }, []);
   const [flashLayers, setFlashLayers] = useState(0);
   const [flashKey, setFlashKey] = useState(0);
   const [screenShaking, setScreenShaking] = useState(false);
@@ -486,17 +500,18 @@ function KistView() {
           padding: "0 12px",
         }}
       >
-        {/* Chest centered, scaled by chestSize */}
+        {/* Chest centered, scaled by chestSize (viewport-fitted) */}
         <div
           ref={chestStageRef}
           style={{
             position: "relative",
             pointerEvents: "auto",
             overflow: "visible",
-            transform: `scale(${SIZE_SCALE[chestSize]})`,
+            transform: `scale(${scaleRef.current[chestSize]})`,
             transformOrigin: "center center",
             transition:
               "transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+            visibility: scaleReady ? "visible" : "hidden",
           }}
         >
           <ChestSprite
