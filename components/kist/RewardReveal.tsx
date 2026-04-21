@@ -28,13 +28,6 @@ const RESOURCE_EMOJI: Record<string, string> = {
 
 const COIN_EMOJI = "🪙";
 
-const RARITY_RGB: Record<string, string> = {
-  gewoon: "155,155,155",
-  zeldzaam: "74,144,217",
-  episch: "155,89,182",
-  legendarisch: "255,215,0",
-};
-
 const RARITY_KLEUR: Record<string, string> = {
   gewoon: "#9B9B9B",
   zeldzaam: "#4A90D9",
@@ -49,10 +42,42 @@ const RARITY_LABEL: Record<string, string> = {
   legendarisch: "LEGENDARISCH",
 };
 
+const RARITY_RGB: Record<string, string> = {
+  gewoon: "155,155,155",
+  zeldzaam: "74,144,217",
+  episch: "155,89,182",
+  legendarisch: "255,215,0",
+};
+
 function dotKleur(r: Reward): string {
   if (r.type === "coins") return "#FFD700";
   if (r.type === "resource") return RESOURCE_KLEUR[r.resource];
   return RARITY_KLEUR[r.rarity];
+}
+
+function backgroundGradient(r: Reward): string {
+  let rgb = "255,215,0";
+  let alpha = 0.18;
+  if (r.type === "resource") {
+    if (r.resource === "hout") {
+      rgb = "139,69,19";
+      alpha = 0.2;
+    } else if (r.resource === "steen") {
+      rgb = "128,128,128";
+      alpha = 0.15;
+    } else {
+      rgb = "218,165,32";
+      alpha = 0.2;
+    }
+  } else if (r.type === "kaart") {
+    rgb = RARITY_RGB[r.rarity];
+    alpha = r.rarity === "legendarisch" ? 0.25 : r.rarity === "episch" ? 0.22 : r.rarity === "zeldzaam" ? 0.2 : 0.12;
+  }
+  const base = `radial-gradient(ellipse 90% 70% at 50% 50%, rgba(${rgb},${alpha}) 0%, rgba(${rgb},${alpha * 0.4}) 40%, transparent 70%)`;
+  if (r.type === "kaart" && r.rarity === "legendarisch") {
+    return `radial-gradient(circle at 50% 50%, rgba(255,215,0,0.15) 0%, transparent 25%), ${base}`;
+  }
+  return base;
 }
 
 function introDuur(r: Reward): number {
@@ -65,6 +90,16 @@ function introDuur(r: Reward): number {
     return 300;
   return 0;
 }
+
+// Deterministische particle-posities (8 stuks)
+const PARTICLES = Array.from({ length: 8 }, (_, i) => ({
+  size: 3 + ((i * 5) % 4),
+  left: ((i * 47) % 90) + 5,
+  duration: 3 + ((i * 7) % 4),
+  delay: -((i * 11) % 6),
+  drift: ((i * 23) % 80) - 40,
+  opacity: 0.4 + ((i * 13) % 30) / 100,
+}));
 
 export default function RewardReveal({ rewards, onDoorgaan }: Props) {
   const [revealIndex, setRevealIndex] = useState(0);
@@ -97,6 +132,7 @@ export default function RewardReveal({ rewards, onDoorgaan }: Props) {
 
   const huidig = rewards[revealIndex];
   const intro = introDuur(huidig);
+  const huidigKleur = dotKleur(huidig);
 
   return (
     <div
@@ -109,9 +145,91 @@ export default function RewardReveal({ rewards, onDoorgaan }: Props) {
         background: "rgba(0,0,0,0.92)",
         zIndex: 100,
         cursor: "pointer",
+        overflow: "hidden",
+        perspective: "1000px",
       }}
     >
-      {/* Per-key intro overlay */}
+      {/* Dynamische glow background per reward */}
+      <div
+        key={`bg-${revealIndex}`}
+        aria-hidden
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: backgroundGradient(huidig),
+          transition: "background 400ms ease",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Floating particles */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          overflow: "hidden",
+        }}
+      >
+        {PARTICLES.map((p, i) => (
+          <span
+            key={i}
+            style={{
+              position: "absolute",
+              width: p.size,
+              height: p.size,
+              borderRadius: "50%",
+              background: huidigKleur,
+              left: `${p.left}%`,
+              bottom: -10,
+              opacity: 0,
+              boxShadow: `0 0 6px ${huidigKleur}`,
+              animation: `particleRise ${p.duration}s linear ${p.delay}s infinite`,
+              ["--p-drift" as string]: `${p.drift}px`,
+              ["--p-op" as string]: p.opacity.toString(),
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Light rays voor legendarisch */}
+      {huidig.type === "kaart" && huidig.rarity === "legendarisch" && (
+        <div
+          aria-hidden
+          style={{
+            position: "fixed",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 0,
+            height: 0,
+            zIndex: 100,
+            pointerEvents: "none",
+            animation: "rayRotate 8s linear infinite",
+          }}
+        >
+          {[0, 45, 90, 135].map((deg) => (
+            <span
+              key={deg}
+              style={{
+                position: "absolute",
+                width: 2,
+                height: "60vh",
+                top: "-30vh",
+                left: -1,
+                background:
+                  "linear-gradient(to top, rgba(255,215,0,0.6) 0%, transparent 100%)",
+                opacity: 0.15,
+                transform: `rotate(${deg}deg)`,
+                transformOrigin: "center center",
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Intro flash voor kaart */}
       {intro > 0 && (
         <div
           key={`intro-${revealIndex}`}
@@ -131,41 +249,6 @@ export default function RewardReveal({ rewards, onDoorgaan }: Props) {
         />
       )}
 
-      {/* Light rays for legendary */}
-      {huidig.type === "kaart" && huidig.rarity === "legendarisch" && (
-        <div
-          key={`rays-${revealIndex}`}
-          aria-hidden
-          style={{
-            position: "fixed",
-            top: "50%",
-            left: "50%",
-            zIndex: 100,
-            pointerEvents: "none",
-          }}
-        >
-          {[0, 60, 120].map((deg) => (
-            <span
-              key={deg}
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: 4,
-                height: 320,
-                marginTop: -160,
-                marginLeft: -2,
-                background:
-                  "linear-gradient(to bottom, transparent 0%, rgba(255,215,0,0.6) 50%, transparent 100%)",
-                transform: `rotate(${deg}deg)`,
-                animation: `lightRay 600ms ease-out ${intro}ms forwards`,
-                opacity: 0,
-              }}
-            />
-          ))}
-        </div>
-      )}
-
       {/* Reveal kaart */}
       <div
         key={`card-${revealIndex}`}
@@ -173,12 +256,12 @@ export default function RewardReveal({ rewards, onDoorgaan }: Props) {
           position: "fixed",
           top: "45%",
           left: "50%",
-          transform: "translate(-50%, -50%)",
           width: 220,
           height: 320,
           borderRadius: 20,
-          animation: `cardReveal 400ms cubic-bezier(0.34,1.56,0.64,1) ${intro}ms both`,
+          animation: `cardFlipIn 420ms cubic-bezier(0.34,1.56,0.64,1) ${intro}ms both`,
           zIndex: 102,
+          transformStyle: "preserve-3d",
         }}
       >
         <RewardKaart reward={huidig} />
@@ -201,17 +284,9 @@ export default function RewardReveal({ rewards, onDoorgaan }: Props) {
           const isHuidig = i === revealIndex;
           const isVolgende = i === revealIndex + 1;
           const isGeweest = i < revealIndex;
-          const grootte = isHuidig ? 16 : 10;
-          let bg: string;
-          if (isHuidig) {
-            bg = dotKleur(r);
-          } else if (isGeweest) {
-            bg = "rgba(255,255,255,0.5)";
-          } else {
-            // Volgende of nog verder weg: kleur per reward type, dimmer
-            bg = `${dotKleur(r)}`;
-          }
-          const opacity = isHuidig ? 1 : isGeweest ? 0.5 : 0.25;
+          const grootte = isHuidig ? 18 : 10;
+          const kleur = dotKleur(r);
+          const opacity = isHuidig ? 1 : isGeweest ? 0.35 : 0.2;
           return (
             <span
               key={i}
@@ -219,13 +294,18 @@ export default function RewardReveal({ rewards, onDoorgaan }: Props) {
                 width: grootte,
                 height: grootte,
                 borderRadius: "50%",
-                background: bg,
+                background: kleur,
                 opacity,
-                transition: "width 200ms, height 200ms, opacity 200ms",
-                animation: isVolgende
-                  ? "nextPulse 0.8s ease-in-out infinite"
+                transition:
+                  "width 200ms, height 200ms, opacity 200ms, background 200ms",
+                animation: isHuidig
+                  ? "btn-pulse 1s ease-in-out infinite"
+                  : isVolgende
+                    ? "nextPulse 0.8s ease-in-out infinite"
+                    : undefined,
+                boxShadow: isHuidig
+                  ? `0 0 16px ${kleur}, 0 0 32px ${kleur}66`
                   : undefined,
-                boxShadow: isHuidig ? `0 0 12px ${bg}` : undefined,
               }}
             />
           );
@@ -255,6 +335,42 @@ export default function RewardReveal({ rewards, onDoorgaan }: Props) {
   );
 }
 
+function CardShimmer() {
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: "absolute",
+        inset: 0,
+        borderRadius: "inherit",
+        pointerEvents: "none",
+        background:
+          "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.07) 50%, transparent 60%)",
+        backgroundSize: "200% 100%",
+        animation: "cardShimmer 2.5s linear infinite",
+      }}
+    />
+  );
+}
+
+function CardTopVignette() {
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 70,
+        background:
+          "linear-gradient(180deg, rgba(0,0,0,0.45) 0%, transparent 100%)",
+        pointerEvents: "none",
+      }}
+    />
+  );
+}
+
 function RewardKaart({ reward }: { reward: Reward }) {
   if (reward.type === "coins") {
     return (
@@ -276,19 +392,8 @@ function RewardKaart({ reward }: { reward: Reward }) {
           overflow: "hidden",
         }}
       >
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 60,
-            background:
-              "linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 100%)",
-            pointerEvents: "none",
-          }}
-        />
+        <CardTopVignette />
+        <CardShimmer />
         <span
           aria-hidden
           style={{
@@ -296,6 +401,7 @@ function RewardKaart({ reward }: { reward: Reward }) {
             lineHeight: 1,
             marginBottom: 16,
             filter: "drop-shadow(0 4px 10px rgba(255,215,0,0.5))",
+            animation: "spriteBounce 2s ease-in-out infinite",
           }}
         >
           {COIN_EMOJI}
@@ -354,19 +460,8 @@ function RewardKaart({ reward }: { reward: Reward }) {
           overflow: "hidden",
         }}
       >
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 60,
-            background:
-              "linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 100%)",
-            pointerEvents: "none",
-          }}
-        />
+        <CardTopVignette />
+        <CardShimmer />
         <span
           aria-hidden
           style={{
@@ -374,6 +469,7 @@ function RewardKaart({ reward }: { reward: Reward }) {
             lineHeight: 1,
             marginBottom: 16,
             filter: `drop-shadow(0 4px 10px ${kleur}77)`,
+            animation: "spriteBounce 2s ease-in-out infinite",
           }}
         >
           {RESOURCE_EMOJI[reward.resource]}
@@ -418,14 +514,14 @@ function RewardKaart({ reward }: { reward: Reward }) {
           ? "linear-gradient(160deg, #0a1628, #0d2040)"
           : "linear-gradient(160deg, #1a1a1a, #2a2a2a)";
   const bgGrad = `radial-gradient(ellipse at 50% 35%, rgba(${rgb},0.22) 0%, transparent 65%), ${baseGrad}`;
-  const glow =
+
+  const bordAnim =
     reward.rarity === "legendarisch"
-      ? "0 0 35px rgba(255,215,0,0.7)"
+      ? "legendary-shimmer 1.8s ease-in-out infinite"
       : reward.rarity === "episch"
-        ? "0 0 25px rgba(155,89,182,0.5)"
-        : reward.rarity === "zeldzaam"
-          ? "0 0 25px rgba(74,144,217,0.5)"
-          : "0 0 20px rgba(155,155,155,0.3)";
+        ? "epicBorderPulse 1.5s ease-in-out infinite"
+        : undefined;
+
   return (
     <div
       style={{
@@ -434,32 +530,26 @@ function RewardKaart({ reward }: { reward: Reward }) {
         borderRadius: 20,
         background: bgGrad,
         border: `2px solid ${kleur}`,
-        boxShadow: glow,
+        boxShadow:
+          reward.rarity === "legendarisch"
+            ? "0 0 35px rgba(255,215,0,0.7)"
+            : reward.rarity === "episch"
+              ? "0 0 25px rgba(155,89,182,0.5)"
+              : reward.rarity === "zeldzaam"
+                ? "0 0 25px rgba(74,144,217,0.5)"
+                : "0 0 20px rgba(155,155,155,0.3)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         position: "relative",
         padding: 16,
         overflow: "hidden",
-        animation:
-          reward.rarity === "legendarisch"
-            ? "legendary-shimmer 1.8s ease-in-out infinite"
-            : undefined,
+        animation: bordAnim,
       }}
     >
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 70,
-          background:
-            "linear-gradient(180deg, rgba(0,0,0,0.45) 0%, transparent 100%)",
-          pointerEvents: "none",
-        }}
-      />
+      <CardTopVignette />
+      <CardShimmer />
+
       {/* Rarity badge */}
       <span
         className="font-cinzel"
@@ -474,6 +564,7 @@ function RewardKaart({ reward }: { reward: Reward }) {
           borderRadius: 8,
           background: `${kleur}33`,
           color: kleur,
+          zIndex: 2,
         }}
       >
         {RARITY_LABEL[reward.rarity]}
@@ -491,10 +582,44 @@ function RewardKaart({ reward }: { reward: Reward }) {
           backgroundRepeat: "no-repeat",
           imageRendering: "pixelated",
           filter: `drop-shadow(0 0 18px ${kleur}AA)`,
+          animation: "spriteBounce 2s ease-in-out infinite",
+          position: "relative",
+          zIndex: 1,
         }}
       />
 
-      {/* Spacer */}
+      {/* Gouden particles voor legendarisch */}
+      {reward.rarity === "legendarisch" && (
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            bottom: 50,
+            left: 0,
+            right: 0,
+            height: 1,
+            pointerEvents: "none",
+            zIndex: 1,
+          }}
+        >
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <span
+              key={i}
+              style={{
+                position: "absolute",
+                left: `${(i * 17 + 8) % 92}%`,
+                width: 3,
+                height: 3,
+                borderRadius: "50%",
+                background: "#FFD700",
+                boxShadow: "0 0 6px #FFD700",
+                animation: `goldRise 1.5s ease-out ${(i * 0.25).toFixed(2)}s infinite`,
+              }}
+            />
+          ))}
+        </div>
+      )}
+
       <div style={{ flex: 1 }} />
 
       <span
@@ -504,6 +629,8 @@ function RewardKaart({ reward }: { reward: Reward }) {
           fontWeight: 700,
           color: "#FFF5E4",
           textAlign: "center",
+          position: "relative",
+          zIndex: 1,
         }}
       >
         {reward.kaart.naam}
@@ -515,6 +642,8 @@ function RewardKaart({ reward }: { reward: Reward }) {
           fontWeight: 700,
           color: kleur,
           marginTop: 4,
+          position: "relative",
+          zIndex: 1,
         }}
       >
         +{reward.amount} KAART{reward.amount > 1 ? "EN" : ""}
@@ -530,6 +659,11 @@ function Samenvatting({
   rewards: Reward[];
   onDoorgaan: () => void;
 }) {
+  const totaalCoins = rewards.reduce(
+    (s, r) => (r.type === "coins" ? s + r.amount : s),
+    0,
+  );
+
   return (
     <div
       style={{
@@ -548,14 +682,14 @@ function Samenvatting({
       <span
         className="font-cinzel"
         style={{
-          fontSize: 14,
+          fontSize: 16,
           fontWeight: 700,
           letterSpacing: "3px",
           color: "#C4A882",
           marginBottom: 18,
         }}
       >
-        JE HEBT ONTVANGEN
+        OVERZICHT
       </span>
 
       <div
@@ -572,12 +706,28 @@ function Samenvatting({
         ))}
       </div>
 
+      {totaalCoins > 0 && (
+        <span
+          className="font-cinzel"
+          style={{
+            marginTop: 20,
+            fontSize: 16,
+            fontWeight: 700,
+            letterSpacing: "2px",
+            color: "#FFD700",
+            textShadow: "0 2px 8px rgba(255,215,0,0.4)",
+          }}
+        >
+          TOTAAL: +{totaalCoins} COINS
+        </span>
+      )}
+
       <button
         type="button"
         onClick={onDoorgaan}
         className="font-cinzel"
         style={{
-          marginTop: 32,
+          marginTop: 28,
           width: "calc(100% - 32px)",
           maxWidth: 360,
           height: 56,
@@ -609,12 +759,7 @@ function MiniReward({ reward }: { reward: Reward }) {
         ? RESOURCE_KLEUR[reward.resource]
         : RARITY_KLEUR[reward.rarity];
 
-  const label =
-    reward.type === "coins"
-      ? `+${reward.amount}`
-      : reward.type === "resource"
-        ? `+${reward.amount}`
-        : `+${reward.amount}`;
+  const label = `+${reward.amount}`;
 
   return (
     <div
@@ -645,18 +790,11 @@ function MiniReward({ reward }: { reward: Reward }) {
           }}
         />
       ) : (
-        <div
-          style={{
-            width: 24,
-            height: 24,
-            borderRadius:
-              reward.type === "coins" ? "50%" : 4,
-            background:
-              reward.type === "coins"
-                ? "radial-gradient(circle at 30% 30%, #FFE060, #B8860B)"
-                : kleur,
-          }}
-        />
+        <span aria-hidden style={{ fontSize: 28, lineHeight: 1 }}>
+          {reward.type === "coins"
+            ? COIN_EMOJI
+            : RESOURCE_EMOJI[reward.resource]}
+        </span>
       )}
       <span
         className="font-cinzel"

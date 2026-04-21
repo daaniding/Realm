@@ -116,6 +116,8 @@ function KistView() {
   }, []);
   const [flashLayers, setFlashLayers] = useState(0);
   const [flashKey, setFlashKey] = useState(0);
+  const [tapFlashKey, setTapFlashKey] = useState(0);
+  const [showGeopend, setShowGeopend] = useState(false);
   const [screenShaking, setScreenShaking] = useState(false);
   const [showTapPrompt, setShowTapPrompt] = useState(false);
   const [ringKey, setRingKey] = useState(0);
@@ -270,19 +272,24 @@ function KistView() {
 
     window.setTimeout(() => setCol(1), 400);
     window.setTimeout(() => setCol(2), 500);
+    // Dramatische fanfare: 5 stijgende tonen + sustained hoge noot
     window.setTimeout(() => {
       playSound([
-        { freq: 523, start: 0, gain: 0.25 },
-        { freq: 659, start: 0.15, gain: 0.25 },
-        { freq: 784, start: 0.3, gain: 0.25 },
-        { freq: 1047, start: 0.45, gain: 0.25 },
+        { freq: 392, start: 0, gain: 0.3, duration: 0.5 },
+        { freq: 523, start: 0.1, gain: 0.3, duration: 0.5 },
+        { freq: 659, start: 0.2, gain: 0.3, duration: 0.5 },
+        { freq: 784, start: 0.3, gain: 0.3, duration: 0.5 },
+        { freq: 1047, start: 0.4, gain: 0.3, duration: 0.5 },
+        { freq: 1047, start: 0.55, gain: 0.3, duration: 0.3 },
       ]);
     }, 500);
     window.setTimeout(() => setBigShake(false), 600);
+    window.setTimeout(() => setShowGeopend(true), 700);
     window.setTimeout(() => setFlashLayers(0), 1000);
+    window.setTimeout(() => setShowGeopend(false), 1500);
     window.setTimeout(() => {
       setPhase("reveal");
-    }, 1200);
+    }, 1500);
   };
 
   const executeTap = () => {
@@ -292,6 +299,7 @@ function KistView() {
       setShowTapPrompt(false);
     }
     setShakeKey((k) => k + 1);
+    setTapFlashKey((k) => k + 1);
     const next = tapCount + 1;
     setTapCount(next);
     setScale((prev) => Math.min(prev + 0.06, maxScaleRef.current));
@@ -600,6 +608,41 @@ function KistView() {
           rewards={finalRewards}
           onDoorgaan={() => router.push("/")}
         />
+      )}
+
+      {/* Tap flash bij elke tap */}
+      {tapFlashKey > 0 && (
+        <div
+          key={`tap-${tapFlashKey}`}
+          aria-hidden
+          className="pointer-events-none fixed inset-0 z-40"
+          style={{
+            background: "#fff",
+            opacity: 0,
+            animation: "tapFlash 220ms ease-out forwards",
+          }}
+        />
+      )}
+
+      {/* GEOPEND! tekst tijdens opening */}
+      {showGeopend && (
+        <div
+          aria-hidden
+          className="pointer-events-none fixed z-50 font-cinzel"
+          style={{
+            top: "45%",
+            left: "50%",
+            fontSize: 38,
+            fontWeight: 900,
+            color: "#FFD700",
+            letterSpacing: "4px",
+            textShadow:
+              "0 0 24px rgba(255,215,0,0.8), 0 4px 12px rgba(0,0,0,0.6)",
+            animation: "geopendText 800ms ease-out forwards",
+          }}
+        >
+          GEOPEND!
+        </div>
       )}
 
       {/* Flash overlays */}
