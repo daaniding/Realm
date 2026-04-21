@@ -120,12 +120,18 @@ function KistView() {
   const [shakeKey, setShakeKey] = useState(0);
   const [bigShake, setBigShake] = useState(false);
 
-  const [scale, setScale] = useState(0.8);
+  const [scale, setScale] = useState(1.0);
+  const startScaleRef = useRef(1.0);
   const maxScaleRef = useRef(2.0);
   useEffect(() => {
-    const maxW = window.innerWidth * 0.7;
-    const maxH = window.innerHeight * 0.4;
-    maxScaleRef.current = Math.min(maxW / 192, maxH / 192);
+    const beschikbaareBredte = window.innerWidth * 0.8;
+    const beschikbaareHoogte = window.innerHeight * 0.45;
+    const maxScaleX = beschikbaareBredte / 400;
+    const maxScaleY = beschikbaareHoogte / 192;
+    const max = Math.min(maxScaleX, maxScaleY);
+    startScaleRef.current = max * 0.6;
+    maxScaleRef.current = max;
+    setScale(max * 0.6);
   }, []);
   const [flashLayers, setFlashLayers] = useState(0);
   const [flashKey, setFlashKey] = useState(0);
@@ -229,12 +235,19 @@ function KistView() {
 
   const triggerSizeUpgrade = (newSize: Exclude<ChestSize, "small">) => {
     setChestSize(newSize);
+    const range = maxScaleRef.current - startScaleRef.current;
     if (newSize === "medium")
-      setScale((prev) => Math.max(prev, maxScaleRef.current * 0.45));
+      setScale((prev) =>
+        Math.max(prev, startScaleRef.current + range * 0.4),
+      );
     else if (newSize === "large")
-      setScale((prev) => Math.max(prev, maxScaleRef.current * 0.7));
+      setScale((prev) =>
+        Math.max(prev, startScaleRef.current + range * 0.7),
+      );
     else if (newSize === "mega")
-      setScale((prev) => Math.max(prev, maxScaleRef.current * 0.9));
+      setScale((prev) =>
+        Math.max(prev, startScaleRef.current + range * 0.9),
+      );
     setRingKey((k) => k + 1);
     setPopup(POPUP_SPEC[newSize]);
     setPopupKey((k) => k + 1);
@@ -304,12 +317,11 @@ function KistView() {
     setShakeKey((k) => k + 1);
     const next = tapCount + 1;
     setTapCount(next);
-    setScale((prev) =>
-      Math.min(
-        prev + (maxScaleRef.current - 0.8) / thresholds.open,
-        maxScaleRef.current,
-      ),
-    );
+    setScale((prev) => {
+      const range = maxScaleRef.current - startScaleRef.current;
+      const stap = range / thresholds.open;
+      return Math.min(prev + stap, maxScaleRef.current);
+    });
 
     const freq = Math.min(800, 300 + next * 40);
     playSound([{ freq, start: 0, gain: 0.15, duration: 0.1 }]);
@@ -497,81 +509,60 @@ function KistView() {
         <div style={{ width: "25%" }} />
       </div>
 
-      {/* Central container: fixed center, flex-col */}
+      {/* Chest + archer wrapper: fixed, gecentreerd, schaalt bij tap */}
       <div
+        ref={chestStageRef}
         style={{
           position: "fixed",
           top: "45%",
           left: "50%",
-          transform: "translate(-50%, -50%)",
+          transform: `translate(-50%, -50%) scale(${currentScale})`,
+          transformOrigin: "center center",
+          transition: "transform 200ms ease-out",
+          overflow: "visible",
           display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 20,
+          flexDirection: "row",
+          alignItems: "flex-end",
+          gap: "8px",
           zIndex: 10,
-          pointerEvents: "none",
-          width: "100%",
-          maxWidth: 430,
-          padding: "0 12px",
+          pointerEvents: "auto",
         }}
       >
-        {/* Chest + archer wrapper, scaled linearly with tapCount */}
-        <div
-          ref={chestStageRef}
-          style={{
-            position: "relative",
-            pointerEvents: "auto",
-            overflow: "visible",
-          }}
-        >
+        <div style={{ alignSelf: "flex-end" }}>
+          <ChestSprite
+            src={sheet}
+            row={row}
+            col={col}
+            glowColor={`rgba(${chest.rgb}, 0.8)`}
+            progress={progress}
+            shakeKey={shakeKey}
+            bigShake={bigShake}
+          />
+        </div>
+        {arrowFlying && (
           <div
+            key={arrowKey}
+            aria-hidden
             style={{
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "flex-end",
-              gap: "8px",
-              transform: `scale(${currentScale})`,
-              transformOrigin: "center bottom",
-              transition: "transform 200ms ease-out",
-              overflow: "visible",
+              position: "absolute",
+              right: 150,
+              bottom: 72,
+              width: 24,
+              height: 4,
+              background: "linear-gradient(to left, #8B4513, #FFD700)",
+              borderRadius: 2,
+              transformOrigin: "right center",
+              animation: "arrow-fly 150ms linear forwards",
+              zIndex: 4,
             }}
-          >
-            <div style={{ alignSelf: "flex-end" }}>
-              <ChestSprite
-                src={sheet}
-                row={row}
-                col={col}
-                glowColor={`rgba(${chest.rgb}, 0.8)`}
-                progress={progress}
-                shakeKey={shakeKey}
-                bigShake={bigShake}
-              />
-            </div>
-            {arrowFlying && (
-              <div
-                key={arrowKey}
-                aria-hidden
-                style={{
-                  position: "absolute",
-                  right: 150,
-                  bottom: 72,
-                  width: 24,
-                  height: 4,
-                  background: "linear-gradient(to left, #8B4513, #FFD700)",
-                  borderRadius: 2,
-                  transformOrigin: "right center",
-                  animation: "arrow-fly 150ms linear forwards",
-                  zIndex: 4,
-                }}
-              />
-            )}
-            <Archer
-              isAttacking={archerAttacking}
-              onAttackComplete={() => setArcherAttacking(false)}
-              onArrowImpact={handleArrowImpact}
-            />
-          </div>
-          <TapParticle color={chest.accent} burstKey={shakeKey} />
+          />
+        )}
+        <Archer
+          isAttacking={archerAttacking}
+          onAttackComplete={() => setArcherAttacking(false)}
+          onArrowImpact={handleArrowImpact}
+        />
+        <TapParticle color={chest.accent} burstKey={shakeKey} />
           <ExplosionParticles
             active={phase === "opening" || phase === "items"}
             accentColor={chest.accent}
@@ -622,8 +613,26 @@ function KistView() {
               }}
             />
           )}
-        </div>
+      </div>
 
+      {/* UI container: onder de chest */}
+      <div
+        style={{
+          position: "fixed",
+          top: "70%",
+          left: "50%",
+          transform: "translate(-50%, 0)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 20,
+          zIndex: 10,
+          pointerEvents: "none",
+          width: "100%",
+          maxWidth: 430,
+          padding: "0 12px",
+        }}
+      >
         {/* TAP prompt */}
         {(phase === "idle" || phase === "tapping") && showTapPrompt && (
           <div style={{ textAlign: "center", marginTop: 8 }}>
