@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { CoinsIcon, TrophyIcon } from "@/components/ui/GameIcon";
 import { getOrCreateUserId } from "@/lib/userId";
 
 export default function Header() {
+  const router = useRouter();
   const [level, setLevel] = useState(1);
   const [xpInLevel, setXpInLevel] = useState(0);
   const [xpVoorVolg, setXpVoorVolg] = useState(50);
@@ -47,7 +49,12 @@ export default function Header() {
         borderBottom: "1px solid rgba(255, 179, 71, 0.3)",
       }}
     >
-      <div className="flex items-center gap-3">
+      <button
+        type="button"
+        onClick={() => router.push("/levels")}
+        className="flex items-center gap-3"
+        style={{ background: "transparent", border: "none", padding: 0, cursor: "pointer" }}
+      >
         <div
           className="shrink-0 rounded-full relative"
           style={{
@@ -117,7 +124,7 @@ export default function Header() {
             />
           </div>
         </div>
-      </div>
+      </button>
 
       <div className="flex items-center gap-2.5">
         <div
