@@ -12,6 +12,14 @@ import { getOrCreateUserId } from "@/lib/userId";
 
 type KaartState = { level: number; kaarten: number; ontgrendeld: boolean };
 type Filter = "alles" | "helden" | "npcs";
+type Sortering = "level" | "rarity" | "type" | "naam";
+
+const RARITY_ORDE: Record<string, number> = {
+  legendarisch: 0,
+  episch: 1,
+  zeldzaam: 2,
+  gewoon: 3,
+};
 
 const STAT_LABELS: Array<{ key: keyof Kaart["stats"]; label: string }> = [
   { key: "aanval", label: "AANVAL" },
@@ -25,6 +33,7 @@ export default function HeldenPage() {
   const [userId, setUserId] = useState<string>("");
   const [state, setState] = useState<Record<string, KaartState>>({});
   const [filter, setFilter] = useState<Filter>("alles");
+  const [sortering, setSortering] = useState<Sortering>("level");
   const [geselecteerd, setGeselecteerd] = useState<Kaart | null>(null);
   const [laden, setLaden] = useState(true);
 
@@ -45,10 +54,35 @@ export default function HeldenPage() {
   }, []);
 
   const zichtbaar = useMemo(() => {
-    if (filter === "helden") return KAARTEN.filter((k) => k.type === "held");
-    if (filter === "npcs") return KAARTEN.filter((k) => k.type === "npc");
-    return KAARTEN;
-  }, [filter]);
+    const basis =
+      filter === "helden"
+        ? KAARTEN.filter((k) => k.type === "held")
+        : filter === "npcs"
+          ? KAARTEN.filter((k) => k.type === "npc")
+          : [...KAARTEN];
+
+    const ontgrendeld = (id: string) => (state[id]?.level ?? 0) > 0;
+    const levelVan = (id: string) => state[id]?.level ?? 0;
+
+    return basis.sort((a, b) => {
+      const aU = ontgrendeld(a.id);
+      const bU = ontgrendeld(b.id);
+      if (aU && !bU) return -1;
+      if (!aU && bU) return 1;
+
+      if (sortering === "rarity") {
+        return RARITY_ORDE[a.rarity] - RARITY_ORDE[b.rarity];
+      }
+      if (sortering === "type") {
+        if (a.type !== b.type) return a.type === "held" ? -1 : 1;
+      }
+      if (sortering === "naam") {
+        return a.naam.localeCompare(b.naam);
+      }
+      // level (default): hoog → laag
+      return levelVan(b.id) - levelVan(a.id);
+    });
+  }, [filter, sortering, state]);
 
   const doeUpgrade = async (kaartId: string) => {
     const r = await fetch("/api/kaarten", {
@@ -153,10 +187,49 @@ export default function HeldenPage() {
         ))}
       </div>
 
+      {/* Sort pills */}
+      <div
+        style={{
+          position: "sticky",
+          top: 100,
+          zIndex: 18,
+          display: "flex",
+          justifyContent: "center",
+          gap: 18,
+          height: 36,
+          alignItems: "center",
+          background: "var(--bg-dark)",
+          borderBottom: "1px solid rgba(255, 179, 71, 0.1)",
+        }}
+      >
+        {(["level", "rarity", "type", "naam"] as const).map((s) => (
+          <button
+            key={s}
+            type="button"
+            onClick={() => setSortering(s)}
+            className="font-cinzel"
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "1.5px",
+              color: sortering === s ? "#FFD700" : "#8a7862",
+              borderBottom:
+                sortering === s ? "2px solid #FFD700" : "2px solid transparent",
+              padding: "4px 2px",
+              background: "transparent",
+              cursor: "pointer",
+              transition: "color 150ms, border-color 150ms",
+            }}
+          >
+            {s.toUpperCase()}
+          </button>
+        ))}
+      </div>
+
       {/* Grid */}
       <div
         style={{
-          paddingTop: 112,
+          paddingTop: 148,
           paddingBottom: 90,
           paddingInline: 16,
           display: "grid",
@@ -176,7 +249,7 @@ export default function HeldenPage() {
                 }}
               />
             ))
-          : zichtbaar.map((k) => {
+          : zichtbaar.map((k, i) => {
               const s = state[k.id] ?? {
                 level: 0,
                 kaarten: 0,
@@ -187,6 +260,7 @@ export default function HeldenPage() {
                   key={k.id}
                   kaart={k}
                   state={s}
+                  index={i}
                   onClick={() => setGeselecteerd(k)}
                 />
               );
@@ -214,16 +288,25 @@ export default function HeldenPage() {
 function KaartTegel({
   kaart,
   state,
+  index,
   onClick,
 }: {
   kaart: Kaart;
   state: KaartState;
+  index: number;
   onClick: () => void;
 }) {
   const kleuren = RARITY_COLORS[kaart.rarity];
   const nodig = kaartenNodigVoorLevel(kaart, state.level);
   const kanUpgraden =
     state.ontgrendeld && nodig !== null && state.kaarten >= nodig;
+
+  // Deterministische duur per kaart tussen 2s en 4s
+  const hash = Array.from(kaart.id).reduce((a, c) => a + c.charCodeAt(0), 0);
+  const floatDuration = 2 + (hash % 20) / 10;
+  const floatAnim = state.ontgrendeld
+    ? `cardFloat ${floatDuration}s ease-in-out ${(index * 0.3).toFixed(2)}s infinite`
+    : undefined;
 
   return (
     <button
@@ -268,6 +351,8 @@ function KaartTegel({
             filter: state.ontgrendeld
               ? `drop-shadow(0 0 12px ${kleuren.border}AA)`
               : "grayscale(1)",
+            animation: floatAnim,
+            willChange: floatAnim ? "transform" : undefined,
           }}
         />
         {!state.ontgrendeld && (

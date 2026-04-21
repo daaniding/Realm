@@ -379,3 +379,8 @@ html, body {
   93.75% { background-position: -2880px 0px; }
   100%   { background-position: -2880px 0px; }
 }
+
+@keyframes cardFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
