@@ -120,7 +120,7 @@ function KistView() {
   const [shakeKey, setShakeKey] = useState(0);
   const [bigShake, setBigShake] = useState(false);
 
-  const [zoom, setZoom] = useState(1.0);
+  const [zoom, setZoom] = useState(0.75);
   useEffect(() => {
     (document.body.style as unknown as { zoom: string }).zoom = String(zoom);
   }, [zoom]);
@@ -231,9 +231,9 @@ function KistView() {
 
   const triggerSizeUpgrade = (newSize: Exclude<ChestSize, "small">) => {
     setChestSize(newSize);
-    if (newSize === "medium") setZoom((prev) => Math.min(prev, 0.85));
-    else if (newSize === "large") setZoom((prev) => Math.min(prev, 0.7));
-    else if (newSize === "mega") setZoom((prev) => Math.min(prev, 0.55));
+    if (newSize === "medium") setZoom((prev) => Math.min(prev, 0.7));
+    else if (newSize === "large") setZoom((prev) => Math.min(prev, 0.62));
+    else if (newSize === "mega") setZoom((prev) => Math.min(prev, 0.54));
     setRingKey((k) => k + 1);
     setPopup(POPUP_SPEC[newSize]);
     setPopupKey((k) => k + 1);
@@ -303,7 +303,7 @@ function KistView() {
     setShakeKey((k) => k + 1);
     const next = tapCount + 1;
     setTapCount(next);
-    setZoom((prev) => Math.max(prev - 0.02, 0.5));
+    setZoom((prev) => Math.max(prev - 0.01, 0.5));
 
     const freq = Math.min(800, 300 + next * 40);
     playSound([{ freq, start: 0, gain: 0.15, duration: 0.1 }]);
