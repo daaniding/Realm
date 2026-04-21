@@ -527,23 +527,25 @@ function KistView() {
             flexDirection: "row",
             alignItems: "flex-end",
             justifyContent: "center",
-            gap: 8,
+            gap: 0,
           }}
         >
-          <ChestSprite
-            src={sheet}
-            row={row}
-            col={col}
-            glowColor={`rgba(${chest.rgb}, 0.8)`}
-            progress={progress}
-            shakeKey={shakeKey}
-            bigShake={bigShake}
-          />
           <DarkKnight
             isAttacking={knightAttacking}
             onAttackComplete={() => setKnightAttacking(false)}
             onHammerImpact={handleKnightImpact}
           />
+          <div style={{ marginLeft: -24, alignSelf: "flex-end" }}>
+            <ChestSprite
+              src={sheet}
+              row={row}
+              col={col}
+              glowColor={`rgba(${chest.rgb}, 0.8)`}
+              progress={progress}
+              shakeKey={shakeKey}
+              bigShake={bigShake}
+            />
+          </div>
           <TapParticle color={chest.accent} burstKey={shakeKey} />
           <ExplosionParticles
             active={phase === "opening" || phase === "items"}

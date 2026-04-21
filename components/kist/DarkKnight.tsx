@@ -45,8 +45,8 @@ export default function DarkKnight({
         aria-hidden
         className="pixel"
         style={{
-          width: 320,
-          height: 128,
+          width: 480,
+          height: 192,
           backgroundImage:
             "url('/assets/heroes/knight/dark_knight_attack1-Sheet.png')",
           backgroundSize: `${ATTACK_FRAMES * 100}% 100%`,
@@ -65,8 +65,8 @@ export default function DarkKnight({
       aria-hidden
       className="pixel"
       style={{
-        width: 192,
-        height: 128,
+        width: 288,
+        height: 192,
         backgroundImage: "url('/assets/heroes/knight/dark_knight_idle.png')",
         backgroundSize: "100% 100%",
         backgroundPosition: "0% 0%",
