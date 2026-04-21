@@ -1,8 +1,8 @@
 "use client";
 
+import Archer from "@/components/kist/Archer";
 import ChestItem from "@/components/kist/ChestItem";
 import ChestSprite from "@/components/kist/ChestSprite";
-import DarkKnight from "@/components/kist/DarkKnight";
 import ExplosionParticles from "@/components/kist/ExplosionParticles";
 import TapParticle from "@/components/kist/TapParticle";
 import {
@@ -118,7 +118,9 @@ function KistView() {
   const [chestSize, setChestSize] = useState<ChestSize>("small");
   const [tapCount, setTapCount] = useState(0);
   const [phase, setPhase] = useState<Phase>("idle");
-  const [knightAttacking, setKnightAttacking] = useState(false);
+  const [archerAttacking, setArcherAttacking] = useState(false);
+  const [arrowKey, setArrowKey] = useState(0);
+  const [arrowFlying, setArrowFlying] = useState(false);
   const [col, setCol] = useState(0);
   const [row, setRow] = useState(chest.closedRow);
   const [shakeKey, setShakeKey] = useState(0);
@@ -348,11 +350,16 @@ function KistView() {
 
   const handleTap = () => {
     if (phase !== "idle" && phase !== "tapping") return;
-    setKnightAttacking(true);
+    setArcherAttacking(true);
   };
 
-  const handleKnightImpact = () => {
-    executeTap();
+  const handleArrowImpact = () => {
+    setArrowKey((k) => k + 1);
+    setArrowFlying(true);
+    window.setTimeout(() => {
+      setArrowFlying(false);
+      executeTap();
+    }, 150);
   };
 
   const progress = Math.min(1, tapCount / thresholds.open);
@@ -530,12 +537,30 @@ function KistView() {
             gap: 0,
           }}
         >
-          <DarkKnight
-            isAttacking={knightAttacking}
-            onAttackComplete={() => setKnightAttacking(false)}
-            onHammerImpact={handleKnightImpact}
+          <Archer
+            isAttacking={archerAttacking}
+            onAttackComplete={() => setArcherAttacking(false)}
+            onArrowImpact={handleArrowImpact}
           />
-          <div style={{ marginLeft: -24, alignSelf: "flex-end" }}>
+          {arrowFlying && (
+            <div
+              key={arrowKey}
+              aria-hidden
+              style={{
+                position: "absolute",
+                left: 180,
+                bottom: 72,
+                width: 24,
+                height: 4,
+                background: "linear-gradient(to right, #8B4513, #FFD700)",
+                borderRadius: 2,
+                transformOrigin: "left center",
+                animation: "arrow-fly 150ms linear forwards",
+                zIndex: 4,
+              }}
+            />
+          )}
+          <div style={{ marginLeft: 8, alignSelf: "flex-end" }}>
             <ChestSprite
               src={sheet}
               row={row}

@@ -368,3 +368,8 @@ html, body {
   background: var(--gold-primary);
   box-shadow: 0 0 6px rgba(255, 179, 71, 0.8);
 }
+
+@keyframes arrow-fly {
+  from { transform: translateX(0); }
+  to { transform: translateX(120px); }
+}
